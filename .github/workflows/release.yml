@@ -29,9 +29,9 @@ jobs:
       matrix:
         include:
           - platform: "ubuntu-20.04"
-            args: ""
+            args: "--verbose"
           - platform: "windows-2019"
-            args: ""
+            args: "--verbose"
           - platform: "macos-latest"
             args: "--verbose --target universal-apple-darwin"
 
@@ -99,7 +99,7 @@ jobs:
           releaseBody: "Tari Universe."
           releaseDraft: true
           prerelease: true
-          updaterJsonKeepUniversal: true
+          #updaterJsonKeepUniversal: true
           args: ${{ matrix.args }}
 
       - name: Upload
