@@ -10,13 +10,32 @@
     "version": "0.1.0"
   },
   "tauri": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/leet4tari/universe/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhGMTIwMzNCMDI5OTI3MApSV1J3a2ltd015RHhDTlpQZzNydzdQSklsQkVmeXJ0OTE5Q2RBVFdIM0FCSUIyTlI4ZkR6WkVFVwo="
+    },
     "allowlist": {
       "all": false,
       "shell": {
         "all": false,
         "open": true,
         "sidecar": false
-      }
+      },
+      "window": {
+          "all": false,
+          "close": true,
+          "hide": true,
+          "show": true,
+          "maximize": true,
+          "minimize": true,
+          "unmaximize": true,
+          "unminimize": true,
+          "startDragging": true
+        }
     },
 
     "pattern": {
@@ -28,8 +47,12 @@
     "windows": [
       {
         "title": "tari-universe",
-        "width": 800,
-        "height": 600
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {
@@ -38,7 +61,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.tauri.dev",
+      "identifier": "com.tarilabs.universe.leet4tari",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -50,6 +73,7 @@
         "../binaries/tari/esme/v1.0.0-pre.18/minotari_node",
         "../binaries/tari/esme/v1.0.0-pre.18/minotari_merge_mining_proxy"
       ]
-    }
+    },
+    "macOSPrivateApi": true
   }
 }
