@@ -34,8 +34,14 @@ jobs:
             args: ''
         #  - platform: 'macos-latest'
         #    args: '--verbose --target universal-apple-darwin'
+        #  - platform: 'macos-latest'
+        #    args: '--verbose --target aarch64-apple-darwin'
+          - platform: 'macos-latest' # for Arm based macs (M1 and above).
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest' # for Intel based macs.
+            args: '--target x86_64-apple-darwin'
           - platform: 'macos-latest'
-            args: '--verbose --target aarch64-apple-darwin'
+            args: '--verbose --target universal-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -86,7 +92,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENABLE_CODE_SIGNING: ${{ secrets.APPLE_CERTIFICATE }}
+          # ENABLE_CODE_SIGNING: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
