@@ -102,7 +102,8 @@ jobs:
           echo -n ${TPK} | base64 -d | head -n1
 
       - name: Build Tauri apps
-        uses: tauri-apps/tauri-action@v0
+        # uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # ENABLE_CODE_SIGNING: ${{ secrets.APPLE_CERTIFICATE }}
