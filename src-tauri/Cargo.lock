@@ -3828,6 +3828,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "tokio-util",
+ "xz2",
 ]
 
 [[package]]
