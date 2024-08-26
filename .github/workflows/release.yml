@@ -102,6 +102,7 @@ jobs:
 
       - name: Build Tauri apps
         uses: tauri-apps/tauri-action@v0
+        id: build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLE_CODE_SIGNING: ${{ secrets.APPLE_CERTIFICATE }}
@@ -114,11 +115,19 @@ jobs:
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         with:
-          tagName: tari_universe-v__VERSION__
-          releaseName: 'Tari Universe v__VERSION__'
+          #tagName: tari_universe-v__VERSION__
+          #releaseName: 'Tari Universe v__VERSION__'
+          #releaseId:
           releaseBody: 'Tari Universe - See the assets to download this version and install'
           releaseDraft: true
           prerelease: true
           includeDebug: false
           includeRelease: true
           args: ${{ matrix.args }}
+
+      - name: Upload
+        if: ${{ startsWith(github.ref, 'refs/heads/build-') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
+          path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
