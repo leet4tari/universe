@@ -63,6 +63,11 @@
         "bundle": {
             "active": true,
             "targets": "all",
+            "windows": {
+                "webviewInstallMode": {
+                  "type": "offlineInstaller"
+                }
+            },
             "identifier": "com.tari.universe",
             "icon": [
                 "icons/icon.icns",

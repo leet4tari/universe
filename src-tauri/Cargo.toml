@@ -38,6 +38,7 @@ tauri = { version = "1", features = [
     "window-start-dragging",
     "window-maximize",
     "window-close",
+    "windows7-compat",
     "macos-private-api",
     "isolation",
     "shell-open",
