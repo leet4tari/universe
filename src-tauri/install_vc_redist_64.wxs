@@ -2,68 +2,29 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
 
-    <!-- v6.1 Service Pack 1 -->
-    <bal:Condition Message="This application requires Service Pack 1 for Windows 7 / Server 2008 R2.">
-      <![CDATA[NOT ((VersionNT = v6.1) AND (ServicePackLevel < 1))]]>
-    </bal:Condition>
+    <!-- https://github.com/tauri-apps/tauri/issues/5442 -->
 
-    <!-- v6.3 KB2919355 -->
-    <util:FileSearch
-      Id="HAL.DLL"
-      Path="[WindowsFolder]System32\hal.dll"
-      Result="version"
-      Variable="NT603HALVER"
-      Condition="VersionNT = v6.3" />
-    <bal:Condition Message="This application requires S14 Update (KB2919355) for Windows 8.1 / Server 2012 R2.">
-      <![CDATA[NOT ((VersionNT = v6.3) AND (NT603HALVER < v6.3.9600.17031))]]>
-    </bal:Condition>
-
-    <!-- processor architecture -->
-    <util:RegistrySearch
-      Id="REG_ARCH"
-      Root="HKLM"
-      Key="SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
-      Value="PROCESSOR_ARCHITECTURE"
-      Result="value"
-      Variable="ARCH_NAME" />
-
-    <!-- Visual C++ 2015-2022 Redistributable (x64) runtime minimum msi package version -->
-    <util:ProductSearch
-      Id="VCRUNTIME_X64"
-      Result="version"
-      Variable="VCRUNTIME_X64_VER"
-      UpgradeCode="36F68A90-239C-34DF-B58C-64B30153CE35"
-      Condition="VersionNT64 AND (ARCH_NAME = &quot;AMD64&quot;)"
-      After="REG_ARCH" />
-    <!-- Visual C++ 2015-2022 Redistributable runtime msi package version -->
-    <Variable Name="VCRUNTIME_VER" Type="version" Value="14.36.32532.0" />
-      
-    <PackageGroup Id="redist_vc15to19">
-      <!-- Visual C++ 2015-2022 Redistributable (x64) - 14.36.32532 -->
-      <ExePackage
-        Id="VC_REDIST_X64"
-        Name="vc_redist.x64.exe"
-        DisplayName="Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.36.32532"
-        Cache="no"
-        Compressed="no"
-        PerMachine="yes"
-        Permanent="yes"
-        Protocol="burn"
-        InstallCondition="VersionNT64 AND (ARCH_NAME = &quot;AMD64&quot;)"
-        DetectCondition="(VCRUNTIME_X64_VER &gt;= VCRUNTIME_VER) AND VersionNT64 AND (ARCH_NAME = &quot;AMD64&quot;)"
-        DownloadUrl="https://download.visualstudio.microsoft.com/download/pr/eaab1f82-787d-4fd7-8c73-f782341a0c63/917C37D816488545B70AFFD77D6E486E4DD27E2ECE63F6BBAAF486B178B2B888/VC_redist.x64.exe"
-        InstallCommand="/install /quiet /norestart"
-        RepairCommand="/repair /quiet /norestart"
-        UninstallCommand="/uninstall /quiet /norestart" >
-        <RemotePayload
-          ProductName="Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.36.32532"
-          Description="Microsoft Visual C++ 2015-2022 Redistributable (x64) - 14.36.32532"
-          Version="14.36.32532.0"
-          CertificatePublicKey="48DF9B8FC33B59FBA8444CBBF7902089F6CDCC59"
-          CertificateThumbprint="7CB6F13D24E9A7244B65CF7A48E8ED6170CD6C77"
-          Hash="C483F66C48BA83E99C764D957729789317B09C6B"
-          Size="25355496" />
-      </ExePackage>
-    </PackageGroup>
+        <util:RegistrySearch Root="HKLM"
+            Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
+            Variable="CPP14RedistBld"
+            Value="Bld"
+            Result="value"
+            Win64="yes"/>
+        <WixVariable Id="CPP14DetectCondition" Overridable="yes" Value="CPP14RedistBld &gt;= 30040" />
+        <PackageGroup Id="redist_vc15to19">
+            <ExePackage Id="vc14" Cache="no" PerMachine="yes" Vital="yes" Compressed="no" Permanent="yes"
+                Name="vc_redist.x64.exe"
+                DownloadUrl="https://download.visualstudio.microsoft.com/download/pr/888b4c07-c602-499a-9efb-411188496ce7/F3A86393234099BEDD558FD35AB538A6E4D9D4F99AD5ADFA13F603D4FF8A42DC/VC_redist.x86.exe"
+                InstallCommand="/quiet /norestart"
+                DetectCondition="!(wix.CPP14DetectCondition)">
+                <RemotePayload 
+                    Size="25169400"
+                    Version="14.29.30040.0"
+                    ProductName="Microsoft Visual C++ 2015-2019 Redistributable (x64) - 14.28.29914"
+                    Description="Microsoft Visual C++ 2015-2019 Redistributable (x64) - 14.28.29914"
+                    Hash="9ADE54D322BE27BFF05D5AFEC8ED44F9B2D9306E" />
+                <ExitCode Value="1638" Behavior="success"/> <!-- Don't fail if newer version is installed -->
+            </ExePackage>
+        </PackageGroup>
     </Fragment>
 </Wix>
