@@ -3,7 +3,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
     <!-- https://github.com/tauri-apps/tauri/issues/5442 -->
-
+    <Fragment>
         <util:RegistrySearch Root="HKLM"
             Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
             Variable="CPP14RedistBld"
