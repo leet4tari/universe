@@ -69,7 +69,7 @@
                 },
                 "wix": {
                     "fragmentPaths": ["install_vc_redist_64-hack.wxs"],
-                    "componentRefs": ["MyFragmentVCInstall"]
+                    "FragmentRef": ["VCRedistFragment"]
                 }
             },
             "identifier": "com.tari.universe",
