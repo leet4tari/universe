@@ -20,30 +20,6 @@
       <ComponentRef Id="VCRedist_x64" />
     </Feature>
 
-    <!-- Registry search to get a value -->
-    <Property Id="REGISTRY_VALUE">
-      <RegistrySearch Id="VCREDIST_X64_REGISTRY"
-                       Root="HKLM"
-                       Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
-                       Name="Installed"
-                       Type="raw" />
-    </Property>
-
-    <!-- Custom action to display the registry value -->
-    <CustomAction Id="DisplayRegistryValue"
-                  Property="REGISTRY_VALUE"
-                  Value="[REGISTRY_VALUE]"
-                  ExeCommand="/c echo The registry value is: [REGISTRY_VALUE] > %temp%\registry_value.log"
-                  Return="ignore"
-                  Impersonate="no" />
-
-    <InstallExecuteSequence>
-      <!-- Schedule the custom action to run after InstallFiles -->
-      <Custom Action="DisplayRegistryValue" After="InstallFiles">
-        <![CDATA[NOT REGISTRY_VALUE = ""]]>
-      </Custom>
-    </InstallExecuteSequence>
-
     <!-- Registry search to check if the redistributable is already installed -->
     <Property Id="VCREDIST_X64_INSTALLED">
       <RegistrySearch Id="VCREDIST_X64_REGISTRY"
@@ -57,24 +33,27 @@
     <CustomAction Id="InstallVCRedist_x64"
                   FileKey="vc_redist.x64.exe"
                   ExeCommand="/install /quiet /norestart /log"
-                  Return="check" />
-            <!--
+                  Return="check"
                   Impersonate="no"
-                  Execute="deferred"
-            -->
+                  Execute="deferred" />
+
+    <!-- Retry mechanism for installation -->
+    <CustomAction Id="CheckAndRetryInstall"
+                  Property="CheckInstall"
+                  ExeCommand="cmd /c timeout /t 30 & echo Retrying installation... > %temp%\retry.log"
+                  Return="ignore"
+                  Execute="immediate" />
 
     <!-- Conditional installation based on the registry check -->
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
       <![CDATA[VCREDIST_X64_INSTALLED <> ""]]>
     </Condition>
 
-<!---
-    <Condition Message="Visual C++ Redistributable x64 is not installed.">
-      <![CDATA[NOT VCREDIST_X64_INSTALLED)]]>
-    </Condition>
--->
-
     <InstallExecuteSequence>
+      <!-- Retry custom action if another install is in progress -->
+      <Custom Action="CheckAndRetryInstall" Before="InstallVCRedist_x64">
+        <![CDATA[NOT VCREDIST_X64_INSTALLED]]>
+      </Custom>
       <!-- Run the custom action only if the redistributable is not installed -->
       <Custom Action="InstallVCRedist_x64" After="InstallFiles">
         <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
