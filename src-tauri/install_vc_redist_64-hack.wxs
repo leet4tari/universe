@@ -40,7 +40,7 @@
     <!-- Retry mechanism for installation -->
     <CustomAction Id="CheckAndRetryInstall"
                   Property="CheckInstall"
-                  ExeCommand="cmd /c timeout /t 30 & echo Retrying installation... > %temp%\retry.log"
+                  ExeCommand="cmd /c timeout /t 30 &amp echo Retrying installation... > %temp%\retry.log"
                   Return="ignore"
                   Execute="immediate" />
 
