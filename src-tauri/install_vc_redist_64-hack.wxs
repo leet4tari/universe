@@ -7,7 +7,7 @@
     <!-- https://tauri.app/v1/guides/building/windows/#extending-the-installer-with-wix-fragments -->
 
     <!-- Define the directory for the redistributable installer -->
-    <DirectoryRef Id="INSTALLFOLDER">
+    <DirectoryRef Id="INSTALLDIR">
       <Directory Id="VCREDISTDIR" Name="VCRedist">
         <Component Id="VCRedist_x64" Guid="234e493a-d836-4505-a0d1-884ff6606261">
           <File Source=".\windows\vc_redist.x64.exe" KeyPath="yes" />
