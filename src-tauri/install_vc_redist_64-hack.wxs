@@ -26,6 +26,7 @@
                        Root="HKLM"
                        Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
                        Name="Installed"
+                       Win64="yes"
                        Type="raw" />
     </Property>
 
@@ -45,9 +46,11 @@
                   Execute="immediate" />
 
     <!-- Conditional installation based on the registry check -->
+    <!--
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
       <![CDATA[VCREDIST_X64_INSTALLED <> ""]]>
     </Condition>
+    -->
 
     <InstallExecuteSequence>
       <!-- Retry custom action if another install is in progress -->
