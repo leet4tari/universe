@@ -29,7 +29,7 @@
                        Root="HKLM"
                        Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
                        Name="Installed"
-                       Type="integer" />
+                       Type="raw" />
     </Property>
 
     <!-- Conditional installation based on the registry check -->
