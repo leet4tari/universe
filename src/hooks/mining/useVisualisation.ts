@@ -1,20 +1,28 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { setAnimationState } from '../../visuals';
 import { GlAppState } from '@app/glApp';
 import { useMiningStore } from '@app/store/useMiningStore.ts';
 
 export function useVisualisation() {
-    const toggleTimerPaused = useMiningStore((s) => s.toggleTimerPaused);
+    const [failure, setFailure] = useState(false);
     const setPostBlockAnimation = useMiningStore((s) => s.setPostBlockAnimation);
-    return useCallback(
-        (state: GlAppState) => {
-            setAnimationState(state);
+    const setTimerPaused = useMiningStore((s) => s.setTimerPaused);
 
-            if (state === 'fail') {
+    useEffect(() => {
+        if (failure) {
+            const failTimeout = setTimeout(() => {
                 setPostBlockAnimation(true);
-            }
-            toggleTimerPaused({ pause: false });
-        },
-        [setPostBlockAnimation, toggleTimerPaused]
-    );
+                setTimerPaused(false);
+                setFailure(false);
+            }, 1500);
+            return () => clearTimeout(failTimeout);
+        }
+    }, [failure, setPostBlockAnimation, setTimerPaused]);
+
+    return useCallback((state: GlAppState) => {
+        setAnimationState(state);
+        if (state === 'fail') {
+            setFailure(true);
+        }
+    }, []);
 }
