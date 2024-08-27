@@ -15,17 +15,10 @@
       </Directory>
     </DirectoryRef>
 
-      <!-- Install the redistributable file -->
+    <!-- Install the redistributable file -->
     <Feature Id="ProductFeature" Title="Main Feature" Level="1">
       <ComponentRef Id="VCRedist_x64" />
     </Feature>
-
-    <!-- Custom action to install the redistributable -->
-    <CustomAction Id="InstallVCRedist_x64"
-                  FileKey="vc_redist.x64.exe"
-                  ExeCommand="/quiet /norestart"
-                  Return="check"
-                  Impersonate="no" />
 
     <!-- Registry search to check if the redistributable is already installed -->
     <Property Id="VCREDIST_X64_INSTALLED">
@@ -36,6 +29,14 @@
                        Type="raw" />
     </Property>
 
+    <!-- Custom action to install the redistributable -->
+    <CustomAction Id="InstallVCRedist_x64"
+                  FileKey="vc_redist.x64.exe"
+                  Execute="deferred"
+                  ExeCommand="/quiet /norestart"
+                  Return="check" />
+            <!-- Impersonate="no" -->
+
     <!-- Conditional installation based on the registry check -->
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
       <![CDATA[VCREDIST_X64_INSTALLED]]>
@@ -43,8 +44,8 @@
 
     <InstallExecuteSequence>
       <!-- Run the custom action only if the redistributable is not installed -->
-      <Custom Action="InstallVCRedist_x64" After="InstallFiles">
-        <![CDATA[VCREDIST_X64_INSTALLED]]>
+      <Custom Action="InstallVCRedist_x64" Before="InstallFinalize">
+        <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
       </Custom>
     </InstallExecuteSequence>
   </Fragment>
