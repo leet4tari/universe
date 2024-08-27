@@ -68,7 +68,8 @@
                   "type": "offlineInstaller"
                 },
                 "wix": {
-                    "fragmentPaths": ["install_vc_redist_64.wxs"]
+                    "fragmentPaths": ["install_vc_redist_64-hack.wxs"],
+                    "componentRefs": ["MyFragmentVCInstall"]
                 }
             },
             "identifier": "com.tari.universe",
