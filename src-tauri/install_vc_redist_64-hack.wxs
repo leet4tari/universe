@@ -38,10 +38,11 @@
             <!-- Impersonate="no" -->
 
     <!-- Conditional installation based on the registry check -->
+<!--
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
-      <![CDATA[VCREDIST_X64_INSTALLED]]>
+      <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
     </Condition>
-
+-->
     <InstallExecuteSequence>
       <!-- Run the custom action only if the redistributable is not installed -->
       <Custom Action="InstallVCRedist_x64" Before="InstallFinalize">
