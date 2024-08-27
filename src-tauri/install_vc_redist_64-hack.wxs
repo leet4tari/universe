@@ -21,24 +21,31 @@
     </Feature>
 
     <!-- Custom action to install the redistributable -->
-    <CustomAction Id="InstallVCRedist_x64" FileKey="vc_redist.x64.exe" ExeCommand="/quiet /norestart" Return="check" />
+    <CustomAction Id="InstallVCRedist_x64"
+                  FileKey="vc_redist.x64.exe"
+                  ExeCommand="/quiet /norestart"
+                  Return="check"
+                  Impersonate="no" />
 
     <!-- Registry search to check if the redistributable is already installed -->
     <Property Id="VCREDIST_X64_INSTALLED">
       <RegistrySearch Id="VCREDIST_X64_REGISTRY"
                        Root="HKLM"
-                       Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64"
+                       Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
                        Name="Installed"
                        Type="raw" />
     </Property>
 
     <!-- Conditional installation based on the registry check -->
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
-      <![CDATA[VCREDIST_X64_INSTALLED = 0]]>
+      <![CDATA[VCREDIST_X64_INSTALLED]]>
     </Condition>
 
     <InstallExecuteSequence>
-      <Custom Action="InstallVCRedist_x64" After="InstallFiles" />
+      <!-- Run the custom action only if the redistributable is not installed -->
+      <Custom Action="InstallVCRedist_x64" After="InstallFiles">
+        <![CDATA[VCREDIST_X64_INSTALLED]]>
+      </Custom>
     </InstallExecuteSequence>
   </Fragment>
 </Wix>
