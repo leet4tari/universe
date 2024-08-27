@@ -32,20 +32,25 @@
     <!-- Custom action to install the redistributable -->
     <CustomAction Id="InstallVCRedist_x64"
                   FileKey="vc_redist.x64.exe"
-                  Execute="deferred"
-                  ExeCommand="/quiet /norestart"
+                  ExeCommand="/install /quiet /norestart /log"
                   Return="check" />
-            <!-- Impersonate="no" -->
+            <!--
+                  Impersonate="no"
+                  Execute="deferred"
+            -->
 
     <!-- Conditional installation based on the registry check -->
-<!--
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
-      <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
+      <![CDATA[VCREDIST_X64_INSTALLED]]>
     </Condition>
--->
+
+    <Condition Message="Visual C++ Redistributable x64 is not installed.">
+      <![CDATA[NOT VCREDIST_X64_INSTALLED)]]>
+    </Condition>
+
     <InstallExecuteSequence>
       <!-- Run the custom action only if the redistributable is not installed -->
-      <Custom Action="InstallVCRedist_x64" Before="InstallFinalize">
+      <Custom Action="InstallVCRedist_x64" After="InstallFiles">
         <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
       </Custom>
     </InstallExecuteSequence>
