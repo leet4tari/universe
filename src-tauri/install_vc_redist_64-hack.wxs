@@ -20,6 +20,30 @@
       <ComponentRef Id="VCRedist_x64" />
     </Feature>
 
+    <!-- Registry search to get a value -->
+    <Property Id="REGISTRY_VALUE">
+      <RegistrySearch Id="VCREDIST_X64_REGISTRY"
+                       Root="HKLM"
+                       Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\X64"
+                       Name="Installed"
+                       Type="raw" />
+    </Property>
+
+    <!-- Custom action to display the registry value -->
+    <CustomAction Id="DisplayRegistryValue"
+                  Property="REGISTRY_VALUE"
+                  Value="[REGISTRY_VALUE]"
+                  ExeCommand="/c echo The registry value is: [REGISTRY_VALUE] > %temp%\registry_value.log"
+                  Return="ignore"
+                  Impersonate="no" />
+
+    <InstallExecuteSequence>
+      <!-- Schedule the custom action to run after InstallFiles -->
+      <Custom Action="DisplayRegistryValue" After="InstallFiles">
+        <![CDATA[NOT REGISTRY_VALUE = ""]]>
+      </Custom>
+    </InstallExecuteSequence>
+
     <!-- Registry search to check if the redistributable is already installed -->
     <Property Id="VCREDIST_X64_INSTALLED">
       <RegistrySearch Id="VCREDIST_X64_REGISTRY"
@@ -41,12 +65,14 @@
 
     <!-- Conditional installation based on the registry check -->
     <Condition Message="Visual C++ Redistributable x64 is already installed.">
-      <![CDATA[VCREDIST_X64_INSTALLED]]>
+      <![CDATA[VCREDIST_X64_INSTALLED <> ""]]>
     </Condition>
 
+<!---
     <Condition Message="Visual C++ Redistributable x64 is not installed.">
       <![CDATA[NOT VCREDIST_X64_INSTALLED)]]>
     </Condition>
+-->
 
     <InstallExecuteSequence>
       <!-- Run the custom action only if the redistributable is not installed -->
@@ -54,5 +80,6 @@
         <![CDATA[NOT(REMOVE OR VCREDIST_X64_INSTALLED)]]>
       </Custom>
     </InstallExecuteSequence>
+
   </Fragment>
 </Wix>
