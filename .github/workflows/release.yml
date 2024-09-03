@@ -90,6 +90,7 @@ jobs:
         run: |
           # openssl, cmake and autoconf already installed
           brew install zip coreutils automake protobuf libtool
+          rustup target add x86_64-apple-darwin
 
       - name: Install dependencies (Windows)
         if: startsWith(runner.os,'Windows')
