@@ -108,6 +108,11 @@ jobs:
           npm --version
           npm install
 
+      - name: Check rust
+        shell: bash
+        run: |
+          rustup show
+
       - name: Build Tauri apps
         id: build
         uses: tauri-apps/tauri-action@v0
