@@ -32,8 +32,10 @@ jobs:
         #    args: ''
           - platform: 'windows-2019'
             args: '--bundles msi'
-          - platform: 'macos-latest'
-            args: '--verbose --release --target universal-apple-darwin'
+#          - platform: 'macos-latest'
+#            args: '--verbose --release --target universal-apple-darwin'
+          - platform: 'macos-13'
+            args: '--verbose --target universal-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
