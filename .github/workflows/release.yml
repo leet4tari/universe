@@ -36,6 +36,10 @@ jobs:
 #            args: '--verbose --release --target universal-apple-darwin'
 #          - platform: 'macos-13'
 #            args: '--verbose --target universal-apple-darwin'
+          - platform: 'macos-13'
+            args: '--verbose --target x86_64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--verbose --target aarch64-apple-darwin'
           - platform: 'macos-latest'
             args: '--verbose --target universal-apple-darwin'
 
