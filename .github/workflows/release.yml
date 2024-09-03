@@ -52,8 +52,8 @@ jobs:
         if: ${{ ! startsWith(github.ref, 'refs/heads/build-') }}
         shell: bash
         run: |
-          #echo "tagName='v__VERSION__'" >> $GITHUB_ENV
-          echo "tagName='tari_universe-v__VERSION__'" >> $GITHUB_ENV
+          echo "tagName='v__VERSION__'" >> $GITHUB_ENV
+          #echo "tagName='tari_universe-v__VERSION__'" >> $GITHUB_ENV
           echo "releaseName='Tari Universe v__VERSION__'" >> $GITHUB_ENV
           #echo "releaseId=" >> $GITHUB_ENV
 
@@ -99,6 +99,7 @@ jobs:
         run: |
           # openssl, cmake and autoconf already installed
           brew install zip coreutils automake protobuf libtool
+          cd src-tauri
           rustup target add x86_64-apple-darwin
           rustup target add aarch64-apple-darwin
           rustup toolchain install stable-x86_64-apple-darwin --force-non-host
@@ -124,6 +125,7 @@ jobs:
       - name: Check rust
         shell: bash
         run: |
+          cd src-tauri
           rustup show
 
       - name: Build Tauri apps
