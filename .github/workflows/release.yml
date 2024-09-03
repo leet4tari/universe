@@ -28,18 +28,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        #  - platform: 'ubuntu-20.04'
-        #    args: ''
+          - platform: 'ubuntu-20.04'
+            args: ''
           - platform: 'windows-2019'
             args: '--bundles msi'
 #          - platform: 'macos-latest'
 #            args: '--verbose --release --target universal-apple-darwin'
 #          - platform: 'macos-13'
 #            args: '--verbose --target universal-apple-darwin'
-          - platform: 'macos-13'
-            args: '--verbose --target x86_64-apple-darwin'
-          - platform: 'macos-latest'
-            args: '--verbose --target aarch64-apple-darwin'
+#          - platform: 'macos-13'
+#            args: '--verbose --target x86_64-apple-darwin'
+#          - platform: 'macos-latest'
+#            args: '--verbose --target aarch64-apple-darwin'
           - platform: 'macos-latest'
             args: '--verbose --target universal-apple-darwin'
 
@@ -52,7 +52,8 @@ jobs:
         if: ${{ ! startsWith(github.ref, 'refs/heads/build-') }}
         shell: bash
         run: |
-          echo "tagName='v__VERSION__'" >> $GITHUB_ENV
+          #echo "tagName='v__VERSION__'" >> $GITHUB_ENV
+          echo "tagName='tari_universe-v__VERSION__'" >> $GITHUB_ENV
           echo "releaseName='Tari Universe v__VERSION__'" >> $GITHUB_ENV
           #echo "releaseId=" >> $GITHUB_ENV
 
