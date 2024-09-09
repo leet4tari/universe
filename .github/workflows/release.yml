@@ -40,8 +40,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set environment variables
-        if: ${{ ! startsWith(github.ref, 'refs/heads/build-') }}
+      - name: Set environment variables for release
+        if: ${{ startsWith(github.ref, 'refs/heads/release') }}
         shell: bash
         run: |
           echo "tagName=v__VERSION__" >> $GITHUB_ENV

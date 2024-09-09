@@ -2,7 +2,6 @@
 name: CI
 
 'on':
-  workflow_dispatch:
   push:
     branches:
       - "ci-*"
@@ -12,6 +11,7 @@ name: CI
       - reopened
       - synchronize
   merge_group:
+  workflow_dispatch:
 
 concurrency:
   # https://docs.github.com/en/actions/examples/using-concurrency-expressions-and-a-test-matrix
@@ -169,3 +169,125 @@ jobs:
           cargo install tauri-cli
           cargo tauri --version
           cargo tauri build --ci --bundles deb
+
+  licenses:
+    name: file licenses
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: install ripgrep
+        run: |
+          #wget https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep_14.1.0-1_amd64.deb.sha256
+          wget https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep_14.1.0-1_amd64.deb
+          sudo dpkg -i ripgrep_14.1.0-1_amd64.deb
+          rg --version || true
+      - name: run the license check
+        run: ./scripts/file_license_check.sh
+
+  test:
+    name: test
+    runs-on: [self-hosted, ubuntu-high-cpu]
+    permissions:
+      checks: write
+      pull-requests: write
+    strategy:
+      matrix:
+        tari_target_network: [
+          { target: "testnet", network: "esmeralda" },
+          { target: "nextnet", network: "nextnet" },
+          { target: "mainnet", network: "stagenet" },
+        ]
+    env:
+      TARI_TARGET_NETWORK: ${{ matrix.tari_target_network.target }}
+      TARI_NETWORK: ${{ matrix.tari_target_network.network }}
+      RUST_LOG: debug
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.toolchain }}
+
+      - name: install dependencies (linux)
+        if: startsWith(runner.os,'Linux')
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --assume-yes \
+            libwebkit2gtk-4.0-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libprotobuf-dev \
+            protobuf-compiler
+
+      - name: Cache cargo files and outputs
+        if: startsWith(runner.environment,'github-hosted')
+        uses: swatinem/rust-cache@v2
+
+      - name: caching (nightly)
+        if: startsWith(runner.environment,'self-hosted')
+        # Don't use rust-cache.
+        # Rust-cache disables a key feature of actions/cache: restoreKeys.
+        # Without restore keys, we lose the ability to get partial matches on caches, and end
+        # up with too many cache misses.
+        # This job runs on self-hosted, so use local-cache instead.
+        uses: maxnowack/local-cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/registry/CACHEDIR.TAG
+            ~/.cargo/git
+            target
+          key: tari-${{ runner.os }}-${{ runner.cpu-model }}-${{ env.toolchain }}-nightly-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.tari_target_network.target }}
+          restore-keys: |
+            tari-${{ runner.os }}-${{ runner.cpu-model }}-${{ env.toolchain }}-nightly-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.tari_target_network.network }}
+            tari-${{ runner.os }}-${{ runner.cpu-model }}-${{ env.toolchain }}-nightly-${{ hashFiles('**/Cargo.lock') }}
+            tari-${{ runner.os }}-${{ runner.cpu-model }}-${{ env.toolchain }}-nightly
+
+      - name: Install cargo-nextest
+        run: cargo install cargo-nextest --locked --force
+
+      - name: cargo test compile
+        run: cargo test -vv --no-run --locked --all-features --release
+
+      - name: cargo test
+        run: cargo nextest run --all-features --release -E "not package(tari_integration_tests)" --profile ci
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v4  # upload test results as artifact
+        if: always()
+        with:
+          name: test-results-${{ matrix.tari_target_network.target }}.${{ matrix.tari_target_network.network }}
+          path: ${{ github.workspace }}/target/nextest/ci/junit.xml
+
+  # Allows other workflows to know the PR number
+  artifacts:
+    name: pr_2_artifact
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Save the PR number in an artifact
+        shell: bash
+        env:
+          PR_NUM: ${{ github.event.number }}
+        run: echo $PR_NUM > pr_num.txt
+
+      - name: Upload the PR number
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr_num
+          path: ./pr_num.txt
+
+  # needed for test results
+  event_file:
+    name: "Upload Event File for Test Results"
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
