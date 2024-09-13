@@ -6,7 +6,7 @@
         "distDir": "../dist"
     },
     "package": {
-        "productName": "Tari Universe",
+        "productName": "Tari Universe - beta",
         "version": "0.3.2"
     },
     "tauri": {
