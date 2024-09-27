@@ -1,32 +1,29 @@
-import { useInterval } from '../useInterval.ts';
-
 import calculateTimeSince from '@app/utils/calculateTimeSince.ts';
 import { useMiningStore } from '@app/store/useMiningStore.ts';
 import { useEffect, useRef } from 'react';
-import { useShallow } from 'zustand/react/shallow';
+import { useInterval } from '@app/hooks/useInterval';
+import { useBlockchainVisualisationStore } from '@app/store/useBlockchainVisualisationStore';
 
 const INTERVAL = 1000; // 1 sec
 
 export function useBlockInfo() {
-    const setDisplayBlockTime = useMiningStore(useShallow((s) => s.setDisplayBlockTime));
-    const timerPaused = useMiningStore(useShallow((s) => s.timerPaused));
-
-    const timeSince = useRef(-1);
+    const timeSinceLastAnimation = useRef(0);
+    const setDisplayBlockTime = useBlockchainVisualisationStore((s) => s.setDisplayBlockTime);
+    const displayBlockHeight = useBlockchainVisualisationStore((s) => s.displayBlockHeight);
+    const isCpuMining = useMiningStore((s) => s.cpu.mining.is_mining);
+    const isGpuMining = useMiningStore((s) => s.gpu.mining.is_mining);
+    const isMining = isGpuMining || isCpuMining;
 
     useEffect(() => {
-        if (timerPaused) {
-            timeSince.current = -1;
-        }
-    }, [timerPaused]);
+        timeSinceLastAnimation.current = 0;
+    }, [displayBlockHeight, isMining]);
 
     useInterval(
         () => {
-            timeSince.current += 1;
-            if (!timerPaused) {
-                const blockTime = calculateTimeSince(0, timeSince.current * INTERVAL);
-                setDisplayBlockTime(blockTime);
-            }
+            timeSinceLastAnimation.current += 1;
+            const blockTime = calculateTimeSince(0, timeSinceLastAnimation.current * INTERVAL);
+            setDisplayBlockTime(blockTime);
         },
-        !timerPaused ? INTERVAL : null
+        isMining ? INTERVAL : null
     );
 }

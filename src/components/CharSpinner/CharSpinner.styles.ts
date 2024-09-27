@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CharSpinnerVariant } from '@app/components/CharSpinner/CharSpinner.tsx';
 import styled from 'styled-components';
 
@@ -24,13 +24,13 @@ export const Wrapper = styled.div<{ $letterHeight?: number }>`
     }
 `;
 
-export const SpinnerWrapper = styled(motion.div)<Props>`
+export const SpinnerWrapper = styled(m.div)<Props>`
     font-variant-numeric: tabular-nums;
     column-gap: ${({ $variant }) => ($variant == 'simple' ? '0' : '2px')};
     display: flex;
 `;
 
-export const CharacterWrapper = styled(motion.div)<Props>`
+export const CharacterWrapper = styled(m.div)<Props>`
     display: flex;
     justify-content: center;
     overflow: hidden;
@@ -39,21 +39,27 @@ export const CharacterWrapper = styled(motion.div)<Props>`
     font-variant-numeric: tabular-nums;
 `;
 
-export const Characters = styled(motion.div)<Props>`
+export const Characters = styled(m.div)<Props>`
     display: flex;
     flex-direction: column;
     align-items: center;
-    letter-spacing: -4px;
     font-weight: ${({ $variant }) => ($variant == 'simple' ? 600 : 700)};
     font-family: ${({ $variant }) => ($variant == 'simple' ? 'Poppins' : 'Druk')}, sans-serif;
     font-size: ${({ $fontSize }) => `${$fontSize}px`};
     line-height: ${({ $letterHeight }) => `${$letterHeight}px`};
 `;
 
-export const Character = styled(motion.div)<Props>`
+export const Character = styled(m.div)<Props>`
     display: flex;
     justify-self: center;
     font-size: ${({ $fontSize }) => `${$fontSize}px`};
-    letter-spacing: -0.02ch;
+    letter-spacing: -4px;
     text-transform: lowercase;
+    width: min-content;
+    // for the unit & decimal
+    &:last-child {
+        width: ${({ $decimal }) => ($decimal ? 'min-content' : '1ch')};
+        margin-left: 1px;
+        margin-right: -1px;
+    }
 `;

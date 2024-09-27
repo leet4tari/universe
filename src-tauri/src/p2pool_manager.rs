@@ -71,6 +71,14 @@ impl Default for P2poolConfig {
     }
 }
 
+impl Clone for P2poolManager {
+    fn clone(&self) -> Self {
+        Self {
+            watcher: self.watcher.clone(),
+        }
+    }
+}
+
 pub struct P2poolManager {
     watcher: Arc<RwLock<ProcessWatcher<P2poolAdapter>>>,
 }
@@ -111,6 +119,14 @@ impl P2poolManager {
             return status_monitor.status().await;
         }
         Err(anyhow!("Failed to get stats"))
+    }
+
+    pub async fn is_running(&self) -> Result<bool, anyhow::Error> {
+        let process_watcher = self.watcher.read().await;
+        if process_watcher.is_running() {
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     pub async fn ensure_started(
