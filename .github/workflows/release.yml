@@ -23,7 +23,7 @@ concurrency:
 permissions: {}
 
 env:
-  TS_FEATURES: "release-ci"
+  TS_FEATURES: release-ci
 
 jobs:
   builds:
@@ -35,11 +35,11 @@ jobs:
       matrix:
         include:
           - platform: 'ubuntu-20.04'
-            args: '--features "${{ env.TS_FEATURES }}"'
+            args: ''
           - platform: 'windows-2019'
-            args: '--bundles msi,updater --features "${{ env.TS_FEATURES }}"'
+            args: '--bundles msi,updater'
           - platform: 'macos-latest'
-            args: '--target universal-apple-darwin --features "${{ env.TS_FEATURES }}"'
+            args: '--target universal-apple-darwin'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -212,7 +212,7 @@ jobs:
           prerelease: true
           includeDebug: false
           includeRelease: true
-          args: ${{ matrix.args }}
+          args: ${{ matrix.args }} --features "${{ env.TS_FEATURES }}"
 
       - name: Upload none releases
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
