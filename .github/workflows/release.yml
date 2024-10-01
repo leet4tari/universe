@@ -218,6 +218,11 @@ jobs:
           includeRelease: true
           args: ${{ matrix.args }} --features "${{ env.TS_FEATURES }}"
 
+      - name: Debug step
+        shell: bash
+        run: |
+          ls -la "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
+
       - name: Upload none releases
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
         uses: actions/upload-artifact@v4
