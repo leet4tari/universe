@@ -22,6 +22,9 @@ concurrency:
 
 permissions: {}
 
+env:
+  TS_FEATURES: "release-ci"
+
 jobs:
   builds:
     name: Building ${{ matrix.platform }}
@@ -32,11 +35,11 @@ jobs:
       matrix:
         include:
           - platform: 'ubuntu-20.04'
-            args: ' --features "release-ci"'
+            args: '--features "${{ env.TS_FEATURES }}"'
           - platform: 'windows-2019'
-            args: '--bundles msi,updater --features "release-ci"'
+            args: '--bundles msi,updater --features "${{ env.TS_FEATURES }}"'
           - platform: 'macos-latest'
-            args: '--target universal-apple-darwin --features "release-ci"'
+            args: '--target universal-apple-darwin --features "${{ env.TS_FEATURES }}"'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -69,6 +72,7 @@ jobs:
           echo "AIRDROP_BASE_URL=${{ env.AIRDROP_BASE_URL }}" >> $GITHUB_ENV
           echo "AIRDROP_API_BASE_URL=${{ env.AIRDROP_API_BASE_URL }}" >> $GITHUB_ENV
           echo "AIRDROP_TWITTER_AUTH_URL=${{ env.AIRDROP_TWITTER_AUTH_URL }}" >> $GITHUB_ENV
+          echo "TS_FEATURES=${{ env.TS_FEATURES }}, airdrop-env" >> $GITHUB_ENV
           #export BETA_DATE=$(date +%Y-%m-%d)
           # numeric-only and cannot be greater than 65535 for msi target
           export BETA_DATE=4$(date +%m%d)
