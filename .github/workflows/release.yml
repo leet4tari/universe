@@ -60,7 +60,6 @@ jobs:
       - name: Set environment variables for beta builds
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
         env:
-          BETA_STRING: "-beta"
           AIRDROP_BASE_URL: ${{ secrets.BETA_AIRDROP_BASE_URL }}
           AIRDROP_API_BASE_URL: ${{ secrets.BETA_AIRDROP_API_BASE_URL }}
           AIRDROP_TWITTER_AUTH_URL: ${{ secrets.BETA_AIRDROP_TWITTER_AUTH_URL }}
@@ -77,10 +76,11 @@ jobs:
           # numeric-only and cannot be greater than 65535 for msi target
           export BETA_DATE=4$(date +%m%d)
           cd "${GITHUB_WORKSPACE}/src-tauri"
-          echo "releaseName=Tari Universe${{ env.BETA_STRING }} v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
+          echo "releaseName=Tari Universe [BETA] v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
           # Don't mess with the double quotes and inner escaped quotes
-          yq eval ".package.productName += \"${{ env.BETA_STRING }}\"" -i tauri.conf.json
+          yq eval ".package.productName = \"Tari Universe [Beta]\"" -i tauri.conf.json
           yq eval ".package.version += \"-${BETA_DATE}\"" -i tauri.conf.json
+          yq eval ".tauri.windows.title = \"Tari Universe [BETA] | Testnet\"" -i tauri.conf.json
           yq eval ".tauri.bundle.identifier = \"com.tari.universe.beta\"" -i tauri.conf.json
           yq eval ".tauri.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/beta-latest.json\"]" \
             -i tauri.conf.json
@@ -102,6 +102,8 @@ jobs:
           echo "TARI_TARGET_NETWORK=nextnet" >> $GITHUB_ENV
           cd "${GITHUB_WORKSPACE}/src-tauri"
           # Don't mess with the double quotes and inner escaped quotes
+          yq eval ".package.productName = \"Tari Universe\"" -i tauri.conf.json
+          yq eval ".tauri.windows.title = \"Tari Universe | Testnet\"" -i tauri.conf.json
           yq eval ".tauri.bundle.identifier = \"com.tari.universe\"" -i tauri.conf.json
           yq eval ".tauri.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/latest.json\"]" \
             -i tauri.conf.json
