@@ -71,7 +71,7 @@ jobs:
           echo "AIRDROP_BASE_URL=${{ env.AIRDROP_BASE_URL }}" >> $GITHUB_ENV
           echo "AIRDROP_API_BASE_URL=${{ env.AIRDROP_API_BASE_URL }}" >> $GITHUB_ENV
           echo "AIRDROP_TWITTER_AUTH_URL=${{ env.AIRDROP_TWITTER_AUTH_URL }}" >> $GITHUB_ENV
-          echo "TS_FEATURES=${{ env.TS_FEATURES }}, airdrop-env" >> $GITHUB_ENV
+          echo "TS_FEATURES=release-ci-beta, airdrop-env" >> $GITHUB_ENV
           #export BETA_DATE=$(date +%Y-%m-%d)
           # numeric-only and cannot be greater than 65535 for msi target
           export BETA_DATE=4$(date +%m%d)
