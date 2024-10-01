@@ -229,18 +229,21 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
+          ls -alhtR "${{ github.workspace }}/src-tauri/
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            ls -alht "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg" || true
-            ls -alht "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos}/*.app*" || true
+            ls -alht ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg || true
+            ls -alht ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos}/*.app* || true
           elif [[ "${RUNNER_OS}" == "Linux" ]]; then
-            ls -alht "${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage*" || true
-            ls -alht "${{ github.workspace }}/src-tauri/target/release/bundle/deb/*.deb" || true
-            ls -alht "${{ github.workspace }}/src-tauri/target/release/bundle/rpm/*.rpm" || true
+            ls -alht ${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage* || true
+            ls -alht ${{ github.workspace }}/src-tauri/target/release/bundle/deb/*.deb || true
+            ls -alht ${{ github.workspace }}/src-tauri/target/release/bundle/rpm/*.rpm || true
           elif [[ "${RUNNER_OS}" == "Windows" ]]; then
             ls -alht src-tauri/target/release/bundle/msi || true
           fi
-          echo "Checking arrary"
-          for tu_file in ${{ join(fromJSON(steps.build.outputs.artifactPaths).tags, ' ') }}; do
+          echo "Checking array"
+          echo "${{ join(fromJSON(steps.build.outputs.artifactPaths), ' ') }}"
+
+          for tu_file in ${{ join(fromJSON(steps.build.outputs.artifactPaths), ' ') }}; do
             echo "${tu_file}"
             ls -la "${tu_file}"
           done
@@ -252,9 +255,9 @@ jobs:
           name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
           #path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           path: |
-            "${{ github.workspace }}/src-tauri/target/release/bundle/appimage/Tari Universe \[Beta\]*.AppImage*"
-            "${{ github.workspace }}/src-tauri/target/release/bundle/deb/Tari Universe \[Beta\].*deb"
-            "${{ github.workspace }}/src-tauri/target/release/bundle/rpm)/Tari Universe \[Beta\]**.rpm)"
-            "${{ github.workspace }}/src-tauri/target/release/bundle/msi/Tari Universe \[Beta\]*.msi*"
-            "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/Tari Universe \[Beta\]*.dmg"
-            "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos/Tari Universe \[Beta\]*.app*"
+            ${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage*
+            ${{ github.workspace }}/src-tauri/target/release/bundle/deb/.*deb
+            ${{ github.workspace }}/src-tauri/target/release/bundle/rpm)/*.rpm)
+            ${{ github.workspace }}/src-tauri/target/release/bundle/msi/Tari Universe \[Beta\]*.msi*
+            ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/Tari Universe \[Beta\]*.dmg
+            ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos/Tari Universe \[Beta\]*.app*
