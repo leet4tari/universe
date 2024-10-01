@@ -60,7 +60,7 @@ jobs:
       - name: Set environment variables for beta builds
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
         env:
-          BETA_STRING: "#Beta#"
+          BETA_STRING: "(Beta)"
           AIRDROP_BASE_URL: ${{ secrets.BETA_AIRDROP_BASE_URL }}
           AIRDROP_API_BASE_URL: ${{ secrets.BETA_AIRDROP_API_BASE_URL }}
           AIRDROP_TWITTER_AUTH_URL: ${{ secrets.BETA_AIRDROP_TWITTER_AUTH_URL }}
@@ -252,7 +252,7 @@ jobs:
           # replace \n with space for loop
           #echo ${tu_env_nu//\\n// }
           #for tu_file in "${tu_env_nu//\\n// }"; do
-          for tu_file in "${tu_env}"; do
+          for tu_file in "${tu_env//\\n// }"; do
             echo "${tu_file}"
             ls -la "${tu_file}" || true
           done
