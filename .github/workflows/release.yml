@@ -220,18 +220,19 @@ jobs:
           args: ${{ matrix.args }} --features "${{ env.TS_FEATURES }}"
 
       - name: Debug step {artifactPaths}
+        if: ${{ false }}
         continue-on-error: true
         env:
           artifactPaths: ${{ steps.build.outputs.artifactPaths }}
         shell: bash
         run: echo "Artifact ID from previous job is $artifactPaths"
 
-      - name: Debug step
+      - name: Debug step - not perfect
+        if: ${{ false }}
         continue-on-error: true
         shell: bash
         run: |
-          set -xueo pipefail
-          echo "Next"
+          #set -xueo pipefail
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             ls -alht ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg || true
             ls -alht ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app* || true
@@ -263,14 +264,5 @@ jobs:
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
         uses: actions/upload-artifact@v4
         with:
-          name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
-          #path: ${{ env.tu_env_nu }}
-          #path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '%0A') }}
+          name: tari-universe-beta_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
           path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
-          #path: |
-          #  ${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage*
-          #  ${{ github.workspace }}/src-tauri/target/release/bundle/deb/.*deb
-          #  ${{ github.workspace }}/src-tauri/target/release/bundle/rpm)/*.rpm)
-          #  ${{ github.workspace }}/src-tauri/target/release/bundle/msi/Tari Universe \[Beta\]*.msi*
-          #  ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/dmg/Tari Universe \[Beta\]*.dmg
-          #  ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/macos/Tari Universe \[Beta\]*.app*
