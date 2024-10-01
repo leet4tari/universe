@@ -76,11 +76,11 @@ jobs:
           # numeric-only and cannot be greater than 65535 for msi target
           export BETA_DATE=4$(date +%m%d)
           cd "${GITHUB_WORKSPACE}/src-tauri"
-          echo "releaseName=Tari Universe [BETA] v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
+          echo "releaseName=Tari Universe [Beta] v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
           # Don't mess with the double quotes and inner escaped quotes
           yq eval ".package.productName = \"Tari Universe [Beta]\"" -i tauri.conf.json
           yq eval ".package.version += \"-${BETA_DATE}\"" -i tauri.conf.json
-          yq eval ".tauri.windows[0].title = \"Tari Universe [BETA] | Testnet\"" -i tauri.conf.json
+          yq eval ".tauri.windows[0].title = \"Tari Universe [Beta] | Testnet\"" -i tauri.conf.json
           yq eval ".tauri.bundle.identifier = \"com.tari.universe.beta\"" -i tauri.conf.json
           yq eval ".tauri.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/beta-latest.json\"]" \
             -i tauri.conf.json
