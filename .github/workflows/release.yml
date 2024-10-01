@@ -219,12 +219,13 @@ jobs:
           args: ${{ matrix.args }} --features "${{ env.TS_FEATURES }}"
 
       - name: Debug step
+        continue-on-error: true
         shell: bash
         run: |
-          if [ "${RUNNER_OS}" == "macOS" ]; then
-            ls -alhtR /Users/runner/work/universe/universe/src-tauri/target/universal-apple-darwin/release/bundle
+          if [[ "${RUNNER_OS}" == "macOS" ]]; then
+            ls -alhtR ${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle
           else
-            ls -alhtR /Users/runner/work/universe/universe/src-tauri/target/release/bundle
+            ls -alhtR ${{ github.workspace }}/src-tauri/target/release/bundle
           fi
           for file in ${{ join(fromJSON(steps.build.outputs.artifactPaths).tags, ' ') }}; do
             ls -la "${file}"
@@ -237,5 +238,5 @@ jobs:
           name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
           #path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           path: |
-            "${{ github.workspace }}/src-tauri/target/release/bundle"
-            "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle"
+            "${{ github.workspace }}/src-tauri/target/release/bundle/*"
+            "${{ github.workspace }}/src-tauri/target/universal-apple-darwin/release/bundle/*"
