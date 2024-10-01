@@ -221,7 +221,7 @@ jobs:
       - name: Debug step
         shell: bash
         run: |
-          ls -la "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
+          ls -la "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\ ') }}"
 
       - name: Upload none releases
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
