@@ -242,13 +242,15 @@ jobs:
             ls -alht src-tauri/target/release/bundle/msi || true
           fi          
           echo "Checking array"
-          tu_env="${{ join(fromJSON(steps.build.outputs.artifactPaths), ' ') }}"
+          tu_env="${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           echo "${tu_env}"
           # Escape the FileName
           tu_env_nu=${tu_env//Tari\ Universe\ \[Beta\]/Tari\\ Universe\\ \\[Beta\\]}
           echo ${tu_env_nu}
-          echo "test_env_nu=${test_env_nu}" >> $GITHUB_ENV
-          for tu_file in "${test_env_nu}"; do
+          echo "tu_env_nu=${tu_env_nu}" >> $GITHUB_ENV
+          # replace \n with space for loop
+          echo ${tu_env_nu//\n// }
+          for tu_file in "${tu_env_nu//\n// }"; do
             echo "${tu_file}"
             ls -la "${tu_file}" || true
           done
@@ -260,7 +262,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
-          path: ${{ env.test_env_nu }}
+          path: ${{ env.tu_env_nu }}
           #path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '%0A') }}
           #path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           #path: |
