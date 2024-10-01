@@ -60,6 +60,7 @@ jobs:
       - name: Set environment variables for beta builds
         if: ${{ ( github.event_name == 'schedule' ) || ( ! startsWith(github.ref, 'refs/heads/release') ) }}
         env:
+          BETA_STRING: "#Beta#"
           AIRDROP_BASE_URL: ${{ secrets.BETA_AIRDROP_BASE_URL }}
           AIRDROP_API_BASE_URL: ${{ secrets.BETA_AIRDROP_API_BASE_URL }}
           AIRDROP_TWITTER_AUTH_URL: ${{ secrets.BETA_AIRDROP_TWITTER_AUTH_URL }}
@@ -76,11 +77,11 @@ jobs:
           # numeric-only and cannot be greater than 65535 for msi target
           export BETA_DATE=4$(date +%m%d)
           cd "${GITHUB_WORKSPACE}/src-tauri"
-          echo "releaseName=Tari Universe [Beta] v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
+          echo "releaseName=Tari Universe ${{ env.BETA_STRING }} v__VERSION__-${BETA_DATE}" >> $GITHUB_ENV
           # Don't mess with the double quotes and inner escaped quotes
-          yq eval ".package.productName = \"Tari Universe [Beta]\"" -i tauri.conf.json
+          yq eval ".package.productName = \"Tari Universe ${{ env.BETA_STRING }}\"" -i tauri.conf.json
           yq eval ".package.version += \"-${BETA_DATE}\"" -i tauri.conf.json
-          yq eval ".tauri.windows[0].title = \"Tari Universe [Beta] | Testnet\"" -i tauri.conf.json
+          yq eval ".tauri.windows[0].title = \"Tari Universe ${{ env.BETA_STRING }} | Testnet\"" -i tauri.conf.json
           yq eval ".tauri.bundle.identifier = \"com.tari.universe.beta\"" -i tauri.conf.json
           yq eval ".tauri.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/beta-latest.json\"]" \
             -i tauri.conf.json
@@ -245,12 +246,13 @@ jobs:
           tu_env="${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           echo "${tu_env}"
           # Escape the FileName
-          tu_env_nu=${tu_env//Tari\ Universe\ \[Beta\]/Tari\\ Universe\\ \\[Beta\\]}
-          echo ${tu_env_nu}
-          echo "tu_env_nu=${tu_env_nu}" >> $GITHUB_ENV
+          #tu_env_esc=${tu_env//Tari\ Universe\ \[Beta\]/Tari\\ Universe\\ \\[Beta\\]}
+          #echo ${tu_env_esc}
+          #echo "tu_env_esc=${tu_env_esc}" >> $GITHUB_ENV
           # replace \n with space for loop
-          echo ${tu_env_nu//\n// }
-          for tu_file in "${tu_env_nu//\n// }"; do
+          #echo ${tu_env_nu//\\n// }
+          #for tu_file in "${tu_env_nu//\\n// }"; do
+          for tu_file in "${tu_env}"; do
             echo "${tu_file}"
             ls -la "${tu_file}" || true
           done
@@ -262,9 +264,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
-          path: ${{ env.tu_env_nu }}
+          #path: ${{ env.tu_env_nu }}
           #path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '%0A') }}
-          #path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
+          path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           #path: |
           #  ${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage*
           #  ${{ github.workspace }}/src-tauri/target/release/bundle/deb/.*deb
