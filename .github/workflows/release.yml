@@ -243,7 +243,7 @@ jobs:
           fi          
           echo "Checking array"
           echo "${{ join(fromJSON(steps.build.outputs.artifactPaths), ' ') }}"
-          for tu_file in ${{ join(fromJSON(steps.build.outputs.artifactPaths), ' ') }}; do
+          for tu_file in "\"${{ join(fromJSON(steps.build.outputs.artifactPaths), '" "') }}\""; do
             echo "${tu_file}"
             ls -la "${tu_file}" || true
           done
@@ -255,8 +255,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tari-universe_${{ steps.build.outputs.appVersion }}_${{ matrix.platform }}
-          path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '%0A') }}
-          # path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}
+          # path: ${{ join(fromJSON(steps.build.outputs.artifactPaths), '%0A') }}
+          path: "${{ join(fromJSON(steps.build.outputs.artifactPaths), '\n') }}"
           #path: |
           #  ${{ github.workspace }}/src-tauri/target/release/bundle/appimage/*.AppImage*
           #  ${{ github.workspace }}/src-tauri/target/release/bundle/deb/.*deb
