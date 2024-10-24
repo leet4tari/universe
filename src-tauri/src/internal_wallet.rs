@@ -13,7 +13,7 @@ use tari_crypto::ristretto::RistrettoPublicKey;
 use tari_key_manager::cipher_seed::CipherSeed;
 use tari_key_manager::key_manager::KeyManager;
 use tari_key_manager::key_manager_service::KeyDigest;
-use tari_utilities::encoding::Base58;
+use tari_utilities::encoding::MBase58;
 use tari_utilities::SafePassword;
 use tokio::fs;
 
@@ -57,7 +57,7 @@ impl InternalWallet {
             match serde_json::from_str::<WalletConfig>(&config) {
                 Ok(config) => {
                     return Ok(Self {
-                        tari_address: TariAddress::from_base58(&config.tari_address_base58)?,
+                        tari_address: TariAddress::from_monero_base58(&config.tari_address_base58)?,
                         config,
                     })
                 }
@@ -107,13 +107,13 @@ impl InternalWallet {
             }
         };
 
-        let seed_binary = Vec::<u8>::from_base58(&self.config.seed_words_encrypted_base58)
+        let seed_binary = Vec::<u8>::from_monero_base58(&self.config.seed_words_encrypted_base58)
             .map_err(|e| anyhow!(e.to_string()))?;
         let seed = CipherSeed::from_enciphered_bytes(&seed_binary, Some(passphrase))?;
 
         let raw_passphrase = phraze::generate_a_passphrase(5, "-", false, &MNEMONIC_ENGLISH_WORDS);
         let seed_file = seed.encipher(Some(SafePassword::from(&raw_passphrase)))?;
-        let seed_words_encrypted_base58 = seed_file.to_base58();
+        let seed_words_encrypted_base58 = seed_file.to_monero_base58();
 
         let network = Network::get_current_or_user_setting_or_default()
             .to_string()
@@ -182,7 +182,7 @@ impl InternalWallet {
             None => CipherSeed::new(),
         };
         let seed_file = seed.encipher(Some(passphrase))?;
-        config.seed_words_encrypted_base58 = seed_file.to_base58();
+        config.seed_words_encrypted_base58 = seed_file.to_monero_base58();
 
         let comms_key_manager = KeyManager::<RistrettoPublicKey, KeyDigest>::from(
             seed.clone(),
@@ -207,7 +207,7 @@ impl InternalWallet {
             TariAddressFeatures::create_one_sided_only(),
         );
 
-        config.tari_address_base58 = tari_address.to_base58();
+        config.tari_address_base58 = tari_address.to_monero_base58();
         config.view_key_private_hex = view_key_private.to_hex();
         config.spend_public_key_hex = comms_pub_key.to_hex();
         Ok((
@@ -228,7 +228,7 @@ impl InternalWallet {
             }
         };
 
-        let seed_binary = Vec::<u8>::from_base58(&self.config.seed_words_encrypted_base58)
+        let seed_binary = Vec::<u8>::from_monero_base58(&self.config.seed_words_encrypted_base58)
             .map_err(|e| anyhow!(e.to_string()))?;
         let seed = CipherSeed::from_enciphered_bytes(&seed_binary, Some(passphrase))?;
         let seed_words = seed.to_mnemonic(MnemonicLanguage::English, None)?;
@@ -243,7 +243,7 @@ impl InternalWallet {
     }
 
     pub fn get_network(&self) -> Result<Network, TariAddressError> {
-        let address = TariAddress::from_base58(&self.config.tari_address_base58);
+        let address = TariAddress::from_monero_base58(&self.config.tari_address_base58);
         address.map(|a| a.network())
     }
 
