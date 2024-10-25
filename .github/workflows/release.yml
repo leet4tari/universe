@@ -150,6 +150,7 @@ jobs:
             protobuf-compiler
 
       - name: Install dependencies (linux/OpenCL)
+        if: startsWith(runner.os,'Linux')
         run: |
           sudo apt-get install --no-install-recommends --assume-yes \
             opencl-headers \
