@@ -149,6 +149,12 @@ jobs:
             libprotobuf-dev \
             protobuf-compiler
 
+      - name: Install dependencies (linux/OpenCL)
+        run: |
+          sudo apt-get install --no-install-recommends --assume-yes \
+            opencl-headers \
+            ocl-icd-opencl-dev
+
       - name: Install dependencies (macOS)
         if: startsWith(runner.os,'macOS')
         run: |
