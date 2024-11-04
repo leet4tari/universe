@@ -185,6 +185,7 @@ jobs:
         shell: bash
         run: |
           echo "SQLITE3_LIB_DIR=C:\vcpkg\installed\x64-windows\lib" >> $GITHUB_ENV
+          echo "LIB=C:\vcpkg\installed\x64-windows\lib" >> $GITHUB_ENV
 
       - name: Azure code-signing setup (windows only)
         if: ${{ ( startsWith(runner.os,'Windows') ) && ( env.AZURE_TENANT_ID != '' ) }}
