@@ -61,10 +61,11 @@ tar = "0.4.26"
 
 hickory-client = { version = "=0.25.0-alpha.2", features = [
   "dns-over-rustls",
-  "dnssec-openssl",
+#  "dnssec-openssl",
+  "dnssec-ring",
 ] }
 hickory-proto = { version = "=0.25.0-alpha.2" }
-openssl = { version = "0.10", features = ["vendored"] }
+#openssl = { version = "0.10", features = ["vendored"] }
 
 tari_common = { git = "https://github.com/tari-project/tari.git", branch = "development" }
 tari_common_types = { git = "https://github.com/tari-project/tari.git", branch = "development" }
