@@ -114,8 +114,12 @@ jobs:
         if: ${{ matrix.platform }} == 'ubuntu-24.04-arm'
         run: |
           printenv
+          echo "home"
+          ls -la /home/
+          echo "home/ruuner/work"
           ls -la /home/runner/work
-          ls -la /home/runneradmin/
+          echo "runneradmin?"
+          ls -la /home/runneradmin/ || exit 0
           sudo apt-get update
           sudo apt-get install --no-install-recommends --assume-yes \
             tar
