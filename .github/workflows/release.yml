@@ -110,6 +110,13 @@ jobs:
           yq eval ".plugins.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/latest.json\", \"https://cdn-universe.tari.com/tari-project/universe/updater/latest.json\"]" \
             -i tauri.conf.json
 
+      - name: Install Dependencies - Linux ARM64
+        if: ${{ matrix.platform }} == 'ubuntu-24.04-arm'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --assume-yes \
+            tar
+
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
