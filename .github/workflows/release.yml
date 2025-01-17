@@ -31,9 +31,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'ubuntu-22.04'
-            args: ''
-          - platform: 'ubuntu-22.04-arm'
+        #  - platform: 'ubuntu-22.04'
+        #    args: ''
+          - platform: 'ubuntu-24.04-arm'
             args: ''
         #  - platform: 'windows-latest'
         #    args: '--bundles msi,updater'
@@ -113,6 +113,9 @@ jobs:
       - name: Install Dependencies - Linux ARM64
         if: ${{ matrix.platform }} == 'ubuntu-24.04-arm'
         run: |
+          printenv
+          ls -la /home/runner/work
+          ls -la /home/runneradmin/
           sudo apt-get update
           sudo apt-get install --no-install-recommends --assume-yes \
             tar
