@@ -42,8 +42,9 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
 
-      - name: Fix PATH and XDG_CONFIG_HOME for ARM64 Linux runners (actions/partner-runner-images#25)
-        run: for var in PATH XDG_CONFIG_HOME; do sed -Ee "s/^/${var}=/" -e 's/(runner)admin/\1/g' <<< "${!var}"; done | tee -a "$GITHUB_ENV"
+#      - name: Fix PATH and XDG_CONFIG_HOME for ARM64 Linux runners (actions/partner-runner-images#25)
+#        if: ${{ matrix.platform }} == 'ubuntu-24.04-arm'
+#        run: for var in PATH XDG_CONFIG_HOME; do sed -Ee "s/^/${var}=/" -e 's/(runner)admin/\1/g' <<< "${!var}"; done | tee -a "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
 
@@ -113,20 +114,6 @@ jobs:
           yq eval ".identifier = \"com.tari.universe\"" -i tauri.conf.json
           yq eval ".plugins.updater.endpoints = [\"https://raw.githubusercontent.com/tari-project/universe/main/.updater/latest.json\", \"https://cdn-universe.tari.com/tari-project/universe/updater/latest.json\"]" \
             -i tauri.conf.json
-
-      - name: Install Dependencies - Linux ARM64
-        if: ${{ matrix.platform }} == 'ubuntu-24.04-arm'
-        run: |
-          printenv
-          echo "home"
-          ls -la /home/
-          echo "home/ruuner/work"
-          ls -la /home/runner/work
-          echo "runneradmin?"
-          ls -la /home/runneradmin/ || exit 0
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends --assume-yes \
-            tar
 
       - uses: actions/setup-node@v4
         with:
