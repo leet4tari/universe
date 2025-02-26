@@ -192,15 +192,18 @@ jobs:
         shell: bash
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          WINDOWS_SIGN_COMMAND: trusted-signing-cli -e https://eus.codesigning.azure.net/ -a Tari -c Tarilabs %1
+          # WINDOWS_SIGN_COMMAND: C:\Users\runneradmin\.cargo\bin\trusted-signing-cli -e https://eus.codesigning.azure.net/ -a Tari -d "${{ env.releaseName }}" -c Tarilabs %1
+          WINDOWS_SIGN_COMMAND: trusted-signing-cli -e https://eus.codesigning.azure.net/ -a Tari -d 'TariUniverse' -c Tarilabs %1
         run: |
           cd "${GITHUB_WORKSPACE}/src-tauri"
-          echo "{}" | \
-            jq '.bundle .windows += {"signCommand": "${{ env.WINDOWS_SIGN_COMMAND }}"}' > \
-              ./tauri.windows.conf.json
+          TU_VERSION=$(jq -r .version tauri.conf.json)
+          # WINDOWS_SIGN_COMMAND="${WINDOWS_SIGN_COMMAND//__VERSION__/${TU_VERSION}}"
+          echo '{}' > ./tauri.windows.conf.json
+          yq eval ".bundle.windows.signCommand = env(WINDOWS_SIGN_COMMAND)" --output-format=json -i ./tauri.windows.conf.json
           cat ./tauri.windows.conf.json
-          cargo install trusted-signing-cli@0.3.0 --locked
-
+          cargo install trusted-signing-cli@0.5.0 --locked
+          trusted-signing-cli --version
+  
       - name: Install Dependencies - Node
         run: |
           npm --version
