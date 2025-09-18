@@ -80,13 +80,13 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${inputPlatforms}" != "Supported" ]; then
             case "${inputPlatforms}" in
               Linux-x64)
-                matrix='{"include":[{"platform":"ubuntu-22.04","args":"--bundles deb,appimage","extra":"-x64"}]}'
+                matrix='{"include":[{"platform":"ubuntu-24.04","args":"--bundles deb,appimage","extra":"-x64"}]}'
                 ;;
               Linux-arm64)
                 matrix='{"include":[{"platform":"ubuntu-24.04-arm","args":"--bundles deb,appimage"}]}'
                 ;;
               Linux-x64-rpm)
-                matrix='{"include":[{"platform":"ubuntu-22.04","args":"--bundles rpm","extra":"-x64-rpm"}]}'
+                matrix='{"include":[{"platform":"ubuntu-24.04","args":"--bundles rpm","extra":"-x64-rpm"}]}'
                 ;;
               Linux-arm64-rpm)
                 matrix='{"include":[{"platform":"ubuntu-24.04-arm","args":"--bundles rpm","extra":"-rpm"}]}'
