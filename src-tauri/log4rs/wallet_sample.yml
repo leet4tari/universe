@@ -11,13 +11,13 @@
 #  timestamp [target] LEVEL message
 refresh_rate: 30 seconds
 appenders:
-# An appender named "stdout" that writes to file.
+  # An appender named "stdout" that writes to file.
   stdout:
     kind: rolling_file
-    path: "{{log_dir}}/wallet/log/stdout.log"
+    path: '{{log_dir}}/wallet/log/stdout.log'
     append: false
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] {h({l}):5} {m}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] {h({l}):5} {m}{n}'
     filters:
       - kind: threshold
         level: warn
@@ -28,11 +28,11 @@ appenders:
         limit: 2mb
       roller:
         kind: delete
-        
+
   # An appender named "network" that writes to a file with a custom pattern encoder
   network:
     kind: rolling_file
-    path: "{{log_dir}}/wallet/log/network.log"
+    path: '{{log_dir}}/wallet/log/network.log'
     policy:
       kind: compound
       trigger:
@@ -41,15 +41,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/wallet/log/network.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/wallet/log/network.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}'
 
   # An appender named "base_layer" that writes to a file with a custom pattern encoder
   base_layer:
     kind: rolling_file
-    path: "{{log_dir}}/wallet/log/base_layer.log"
+    path: '{{log_dir}}/wallet/log/base_layer.log'
     policy:
       kind: compound
       trigger:
@@ -58,15 +58,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/wallet/log/base_layer.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/wallet/log/base_layer.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}'
 
   # An appender named "base_layer" that writes to a file with a custom pattern encoder
   other:
     kind: rolling_file
-    path: "{{log_dir}}/wallet/log/other.log"
+    path: '{{log_dir}}/wallet/log/other.log'
     policy:
       kind: compound
       trigger:
@@ -75,15 +75,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/wallet/log/other.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/wallet/log/other.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}'
 
   # An appender named "contacts" that writes to a file with a custom pattern encoder
   contacts:
     kind: rolling_file
-    path: "{{log_dir}}/wallet/log/contacts.log"
+    path: '{{log_dir}}/wallet/log/contacts.log'
     policy:
       kind: compound
       trigger:
@@ -92,10 +92,10 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/wallet/log/contacts.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/wallet/log/contacts.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n}'
 
 # root (to base_layer)
 root:

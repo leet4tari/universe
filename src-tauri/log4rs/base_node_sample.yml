@@ -15,7 +15,7 @@ appenders:
   stdout:
     kind: console
     encoder:
-      pattern: "{d(%H:%M)} {h({l}):5} {m}{n}"
+      pattern: '{d(%H:%M)} {h({l}):5} {m}{n}'
     filters:
       - kind: threshold
         level: warn
@@ -23,7 +23,7 @@ appenders:
   # An appender named "network" that writes to a file with a custom pattern encoder
   network:
     kind: rolling_file
-    path: "{{log_dir}}/base_node/log/network.log"
+    path: '{{log_dir}}/base_node/log/network.log'
     policy:
       kind: compound
       trigger:
@@ -32,14 +32,14 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/base_node/log/network.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/base_node/log/network.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m} // {f}:{L}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m} // {f}:{L}{n}'
   # An appender named "network" that writes to a file with a custom pattern encoder
   message_logging:
     kind: rolling_file
-    path: "{{log_dir}}/base_node/log/messages.log"
+    path: '{{log_dir}}/base_node/log/messages.log'
     policy:
       kind: compound
       trigger:
@@ -48,15 +48,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/base_node/log/messages.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/base_node/log/messages.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m} // {f}:{L}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m} // {f}:{L}{n}'
 
   # An appender named "base_layer" that writes to a file with a custom pattern encoder
   base_layer:
     kind: rolling_file
-    path: "{{log_dir}}/base_node/log/base_layer.log"
+    path: '{{log_dir}}/base_node/log/base_layer.log'
     policy:
       kind: compound
       trigger:
@@ -65,15 +65,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/base_node/log/base_layer.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/base_node/log/base_layer.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [{X(node-public-key)},{X(node-id)}] {l:5} {m} // {f}:{L}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [{X(node-public-key)},{X(node-id)}] {l:5} {m} // {f}:{L}{n}'
 
   # An appender named "base_layer" that writes to a file with a custom pattern encoder
   grpc:
     kind: rolling_file
-    path: "{{log_dir}}/base_node/log/grpc.log"
+    path: '{{log_dir}}/base_node/log/grpc.log'
     policy:
       kind: compound
       trigger:
@@ -82,15 +82,15 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/base_node/log/grpc.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/base_node/log/grpc.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} {l:5} {m} // {f}:{L}{n}"
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} {l:5} {m} // {f}:{L}{n}'
 
   # An appender named "other" that writes to a file with a custom pattern encoder
   other:
     kind: rolling_file
-    path: "{{log_dir}}/base_node/log/other.log"
+    path: '{{log_dir}}/base_node/log/other.log'
     policy:
       kind: compound
       trigger:
@@ -99,10 +99,10 @@ appenders:
       roller:
         kind: fixed_window
         base: 1
-        count: 5
-        pattern: "{{log_dir}}/base_node/log/other.{}.log"
+        count: 2
+        pattern: '{{log_dir}}/base_node/log/other.{}.log'
     encoder:
-      pattern: "{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n} // {f}:{L} "
+      pattern: '{d(%Y-%m-%d %H:%M:%S.%f)} [{t}] [Thread:{I}] {l:5} {m}{n} // {f}:{L} '
 
 # Set the default logging level to "info"
 root:
@@ -124,10 +124,12 @@ loggers:
     level: debug
     appenders:
       - grpc
+      - stdout
+    additive: false
 
   # Route log events sent to the "core" logger to the "base_layer" appender
   c:
-    level: debug
+    level: info
     appenders:
       - base_layer
   minotari:
