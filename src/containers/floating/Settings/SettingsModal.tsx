@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from '@app/components/elements/dialog/Dialog.ts
 import { Typography } from '@app/components/elements/Typography.tsx';
 import { IconButton } from '@app/components/elements/buttons/IconButton.tsx';
 import RestartDialog from '@app/components/dialogs/RestartDialog.tsx';
-
+import ConfirnNodeDataLocationModal from '@app/components/dialogs/ConfirmNodaDataLocation.tsx';
 import SettingsNavigation from './components/Navigation.tsx';
 import { SETTINGS_TYPES, SettingsType } from './types.ts';
 import {
@@ -16,6 +16,7 @@ import {
     ConnectionsSettings,
     ExperimentalSettings,
     GeneralSettings,
+    McpSettings,
     MiningSettings,
     WalletSettings,
     ReleaseNotes,
@@ -37,6 +38,7 @@ const SettingsModal = memo(function SettingsModal() {
         pools: <PoolsSettings />,
         wallet: <WalletSettings />,
         airdrop: <AirdropSettings />,
+        mcp: <McpSettings />,
         experimental: <ExperimentalSettings />,
         releaseNotes: <ReleaseNotes />,
     };
@@ -51,7 +53,8 @@ const SettingsModal = memo(function SettingsModal() {
     }
 
     const sectionTitle = t(`tabs.${activeSection}`);
-    const title = activeSection === 'releaseNotes' ? sectionTitle : `${sectionTitle} ${t('settings')}`;
+    const omitSettingsSuffix = activeSection === 'releaseNotes' || activeSection === 'airdrop';
+    const title = omitSettingsSuffix ? sectionTitle : `${sectionTitle} ${t('settings')}`;
 
     return (
         <Dialog open={isSettingsOpen} onOpenChange={onOpenChange}>
@@ -73,6 +76,7 @@ const SettingsModal = memo(function SettingsModal() {
                     </ContentContainer>
                 </Container>
                 <RestartDialog />
+                <ConfirnNodeDataLocationModal />
             </DialogContent>
         </Dialog>
     );

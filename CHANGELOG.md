@@ -1,8 +1,75 @@
+🚀 TARI UNIVERSE v1.6.10: Master Oogway's Secret pt 2
+
+_February 10, 2026_
+
+Hey Tari fam,
+
+Following up on last month's stability-focused release, Master Oogway's Secret pt 2 brings some important under-the-hood upgrades and a handy new feature for managing your node data.
+
+✨ WHAT'S NEW & FIXED
+
+- 📂 **Custom node data location** – You can now choose where your local node stores its chain data! Head to Settings to pick a custom directory, and Tari Universe will copy or move your existing chain data to the new location. Perfect if you want to free up space on your main drive or move things to a faster SSD.
+- ⛏️ **XMRig updated to v6.25.0** – We've updated the CPU mining engine to the latest version for improved performance and stability. Heads up: you may need to update your antivirus exclusions, as the new binary can trigger a fresh false-positive detection.
+- 🔒 **Tor updated to v15.0.5** – Updated to the latest Tor release for improved privacy and connection reliability.
+- 🚫 **SHA-3 mining removed** – SHA-3 mining has been fully removed from Tari Universe. GPU mining is currently not supported on macOS. We're focusing our efforts on delivering the best possible CPU and merge-mining experience for now.
+- 🧪 **Under the hood** – We've been hammering away on automated testing across both the frontend and backend to continue ensuring quality, stable releases over time.
+
+Thank you for your patience and continued support. Tari Universe keeps getting better because of you! 💜🐢
+
+---
+
+🚀 TARI UNIVERSE v1.6.9: Master Oogway's Secret pt 1
+
+_January 21, 2026_
+
+✨ WHAT'S FIXED
+
+- 🌉 **No more crashes when switching to Bridge** – Some of you experienced crashes when quickly switching between the Bridge and the main mining view. That's fixed! You can now toggle back and forth as fast as you want without the app crashing on you.
+- 🌐 **Faster remote node experience** – If you're running in remote node mode, Tari Universe now communicates more efficiently with those nodes. We've switched to a smarter caching approach that means less waiting and more mining.
+- 🔧 **Under the hood** – We've updated to the latest Tari core components (v5.2.1), bringing you the most recent stability improvements and bug fixes from the core team. Plus, we've cleaned up internal wallet code and refreshed dependencies across the app.
+
+This one's all about making Tari Universe more solid and responsive. Thank you for your patience and your feedback—it helps us squash these bugs faster! 💜🐢
+
+---
+
+🚀 TARI UNIVERSE v1.6.8: The Bountiful Harvest Part 2
+
+_December 16, 2025_
+
+Hey Tari fam,
+
+Quick bug fix release to smooth out a couple of rough edges from the last update.
+
+✨ WHAT'S FIXED
+
+- 🎁 **Airdrop claiming, streamlined** – We've refined the airdrop flow to make claiming your rewards clearer and more intuitive.
+- 🕰️ **Wallet scanning back up to speed** – Fixed a bug that was slowing down wallet scanning. Your balance and transactions should now refresh much faster.
+
+Thank you for your patience and all the helpful bug reports! 💜🐢
+
+---
+
+🚀 TARI UNIVERSE v1.6.7: The Bountiful Harvest
+
+_December 2, 2025_
+
+Hey Tari fam,
+
+The big news: airdrop claiming is here! We've also fixed pause on battery mode for laptop users, improved the bridge, and made it easier to troubleshoot issues when they arise.
+
+✨ WHAT'S NEW & FIXED
+
+- 🎁 **Airdrop claiming** – The moment you've been waiting for! You can now claim your airdrop rewards directly in Tari Universe every month starting today! Click on the parachute icon to log in. The claiming interface walks you through the process with clear status updates and countdown timers for each installment. For Linux users, we created a step-by-step guide to [claiming on a Windows VM here](https://airdrop.tari.com/linux-faq).
+- 🔋 **Pause on battery mode** – Laptop users, we prematurely announced this in the last update but it wasn't quite ready. Tari Universe now automatically pauses mining when you switch from wall power to battery, so you won't drain your laptop battery. A helpful dialog explains what's happening, and mining resumes automatically when you plug back in. (Turn off in Settings if you prefer)
+- ⚙️ **Settings access during errors** – When something goes wrong and you see a critical error, you can now still access Settings. This means you can check your seed words or adjust settings even when the app hits a snag.
+- 📋 **Transaction details, simplified** – No more triple-clicking to reveal hidden fields! All transaction details are now visible immediately with a scrollbar for longer content.
+- 🎛️ **Mode selector fix** – Fixed the annoying bug where switching from Custom mode required selecting your new mode twice.
+
+---
+
 🚀 TARI UNIVERSE v1.6.6: Seasons of Soon
 
 _November 11, 2025_
-
-🔄 Rolling out via auto-update
 
 Hey Tari fam,
 
@@ -50,7 +117,6 @@ Quick hotfix! We've resolved the issue where pool rewards would stop updating in
 Everything should now update smoothly. Thanks for your patience! 💜🐜
 
 ---
-
 🚀 TARI UNIVERSE v1.6.3: The Invisible Garden
 
 _October 13, 2025_

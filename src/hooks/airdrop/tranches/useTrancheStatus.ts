@@ -35,8 +35,9 @@ export function useTrancheStatus(enabled = true) {
         queryKey: [KEY_TRANCHE_STATUS, user],
         queryFn: fetchTrancheStatus,
         enabled: !!user && enabled,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 2 * 60 * 1000, // 2 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes
+        refetchOnWindowFocus: true,
         retry: 2,
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
         refetchInterval: (query) => {
@@ -70,6 +71,7 @@ export function useTrancheStatus(enabled = true) {
 // Helper hook to calculate balance summary from tranche data
 export function useBalanceSummary(): BalanceSummary | null {
     const { data: trancheStatus } = useTrancheStatus();
+    const { nextTranche } = useAvailableTranches();
 
     if (!trancheStatus) return null;
 
@@ -90,6 +92,7 @@ export function useBalanceSummary(): BalanceSummary | null {
         totalClaimed,
         totalPending,
         totalExpired,
+        nextAvailableAmount: nextTranche?.amount,
     };
 }
 
@@ -97,23 +100,22 @@ export function useBalanceSummary(): BalanceSummary | null {
 export function useAvailableTranches() {
     const { data: trancheStatus, ...rest } = useTrancheStatus();
     const availableTranches = trancheStatus?.tranches.filter((tranche) => tranche.canClaim) || [];
+    const currentTranche = availableTranches.length > 0 ? availableTranches[0] : null;
+
+    const futureTranches = trancheStatus?.tranches
+        .filter((t) => !t.claimed && new Date(t.validTo) > new Date())
+        ?.sort((a, b) => new Date(a.validTo).getTime() - new Date(b.validTo).getTime());
+
+    const nextTranche = futureTranches?.find((t) => t.id !== currentTranche?.id && new Date(t.validFrom) > new Date());
+    const lastClaimedTranche = trancheStatus?.tranches.find((t) => t.claimed);
 
     return {
         availableTranches,
         hasAvailable: availableTranches.length > 0,
+        currentTranche,
+        nextTranche,
+        lastClaimedTranche,
         trancheStatus,
         ...rest,
-    };
-}
-
-// Helper hook to get current month's available tranche
-export function useCurrentMonthTranche() {
-    const { availableTranches } = useAvailableTranches();
-    // For monthly tranches, we typically want the earliest available one
-    const currentTranche = availableTranches.length > 0 ? availableTranches[0] : null;
-
-    return {
-        currentTranche,
-        hasCurrentTranche: !!currentTranche,
     };
 }

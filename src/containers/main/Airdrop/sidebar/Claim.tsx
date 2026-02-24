@@ -1,188 +1,133 @@
+import { useEffect, useMemo, useRef } from 'react';
 import { useAirdropStore } from '@app/store';
 import { openTrancheModal } from '@app/store/actions/airdropStoreActions';
 
 import { SidebarItem } from './components/SidebarItem';
-import { ActionImgWrapper, NextRewardWrapper, RewardTooltipContent, RewardTooltipItems } from './items.style';
+import {
+    ActionImgWrapper,
+    NextRewardWrapper,
+    RewardTooltipContent,
+    RewardTooltipItem,
+    RewardTooltipItems,
+    TooltipHeader,
+} from './items.style';
 import { ParachuteSVG } from '@app/assets/icons/ParachuteSVG';
 import { Typography } from '@app/components/elements/Typography.tsx';
 import { useTranslation } from 'react-i18next';
 import { FEATURE_FLAGS } from '@app/store/consts.ts';
 
 import { useClaimStatus } from '@app/hooks/airdrop/claim/useClaimStatus';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useBalanceSummary, useCurrentMonthTranche } from '@app/hooks/airdrop/tranches/useTrancheStatus.ts';
+import { useBalanceSummary } from '@app/hooks/airdrop/tranches/useTrancheStatus.ts';
+import { useTrancheAutoRefresh } from '@app/hooks/airdrop/tranches/useTrancheAutoRefresh.ts';
+import { formatNumber, FormatPreset, formatAmountWithKM } from '@app/utils';
+import { ClaimStatus } from '@app/types/airdrop-claim.ts';
+import Countdown from '@app/components/airdrop/Countdown.tsx';
 
-interface CountdownTime {
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
+interface ClaimTooltipProps {
+    claimStatus?: ClaimStatus;
+    claimStatusLoading?: boolean;
+    nextAvailable?: string | null;
 }
 
-export default function Claim() {
+const formatAmount = (amount: number | undefined | null): string => {
+    if (amount === undefined || amount === null || isNaN(amount)) return '0';
+    const rounded = Math.round(amount * 100) / 100;
+    return formatNumber(rounded * 1_000_000, FormatPreset.XTM_LONG_DEC);
+};
+
+function ClaimTooltip({ claimStatus, claimStatusLoading, nextAvailable }: ClaimTooltipProps) {
     const { t } = useTranslation('airdrop');
-    const features = useAirdropStore((s) => s.features);
-
-    const killswitchEngaged = features?.includes(FEATURE_FLAGS.FF_AD_KS);
-    const claimEnabled = features?.includes(FEATURE_FLAGS.FF_AD_CLAIM_ENABLED);
-    const claimAvailable = features?.includes(FEATURE_FLAGS.FF_AD_AVAILABLE);
-
-    // Airdrop data hooks (same as modal)
     const balanceSummary = useBalanceSummary();
-    const { currentTranche } = useCurrentMonthTranche();
-    const { data: claimStatus, isLoading: claimStatusLoading } = useClaimStatus();
-    const trancheStatus = useAirdropStore((state) => state.trancheStatus);
-    // State for countdown
-    const [countdown, setCountdown] = useState<CountdownTime | null>(null);
-    // Find next available tranche
-    const futureTranche = trancheStatus?.tranches.find((t) => !t.claimed && new Date(t.validFrom) > new Date());
 
-    // Optimized countdown effect - update less frequently when time is far out
-    useEffect(() => {
-        if (!futureTranche) {
-            return;
-        }
-
-        const updateCountdown = () => {
-            const now = new Date().getTime();
-            const futureTime = new Date(futureTranche.validFrom).getTime();
-            const timeDiff = futureTime - now;
-
-            if (timeDiff <= 0) {
-                setCountdown(null);
-                return;
-            }
-
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-            setCountdown({ days, hours, minutes, seconds });
-        };
-
-        updateCountdown();
-
-        // Dynamic interval: update every second only if less than 1 hour, otherwise every minute
-        const now = new Date().getTime();
-        const futureTime = new Date(futureTranche.validFrom).getTime();
-        const timeDiff = futureTime - now;
-        const intervalTime = timeDiff <= 60 * 60 * 1000 ? 1000 : 60000;
-        const interval = setInterval(updateCountdown, intervalTime);
-
-        return () => clearInterval(interval);
-    }, [futureTranche]);
-
-    // Memoize format countdown function
-    const formatCountdown = useCallback((countdown: CountdownTime) => {
-        const parts: string[] = [];
-        if (countdown.days > 0) parts.push(`${countdown.days}D`);
-        if (countdown.days > 0 || countdown.hours > 0) parts.push(`${countdown.hours}H`);
-        parts.push(`${countdown.minutes}M`);
-        if (countdown.days < 0 && countdown.hours < 0) parts.push(`${countdown.seconds}S`);
-        return parts.join(' ');
-    }, []);
-
-    // Memoize format amount function
-    const formatAmount = useCallback((amount: number | undefined | null): string => {
-        if (amount === undefined || amount === null || isNaN(amount)) return '0';
-        const rounded = Math.round(amount * 100) / 100;
-        return (rounded % 1 === 0 ? rounded : rounded).toLocaleString();
-    }, []);
-
-    // Determine next reward amount and countdown
-    const nextRewardAmount = currentTranche?.amount || futureTranche?.amount;
-
-    // Memoize calculations to prevent unnecessary rerenders
-    const totalValues = useMemo(() => {
-        const totalOriginalAmount = claimStatus?.amount || 0;
-
-        if (!totalOriginalAmount) return { total: 0, claimed: 0, pending: 0 };
-
+    const claimTotal = claimStatus?.amount || 0;
+    const values = useMemo(() => {
+        if (!claimTotal) return { total: 0, claimed: 0, pending: 0 };
+        const total = claimTotal;
         if (balanceSummary) {
             const claimed = balanceSummary.totalClaimed;
             const expired = balanceSummary.totalExpired;
-            const pending = totalOriginalAmount - claimed - expired;
-            return { total: totalOriginalAmount, claimed, pending };
+            const pending = total - claimed - expired;
+            return { total, claimed, pending };
         }
 
         // Fallback if no balance summary
-        return { total: totalOriginalAmount, claimed: 0, pending: totalOriginalAmount };
-    }, [claimStatus?.amount, balanceSummary]);
+        return { total, claimed: 0, pending: total };
+    }, [balanceSummary, claimTotal]);
 
-    const { total: totalAirdropAmount, claimed: totalClaimedAmount, pending: totalPendingAmount } = totalValues;
+    const isIneligible = !claimStatusLoading && (!claimTotal || claimTotal === 0 || claimStatus?.claimTarget !== 'xtm');
+    const hasClaims = values.total > 0 || values.claimed > 0;
 
-    // Memoize tooltip content to prevent unnecessary rerenders
-    const tooltipContent = useMemo(() => {
-        if (killswitchEngaged) return null;
-        return (
-            <RewardTooltipContent>
-                <Typography variant="h6">{t('loggedInTitle')}</Typography>
+    const ineligibleMarkup = isIneligible && <Typography variant="h6">{t('tranche.status.ineligible')}</Typography>;
+    const loadingMarkup = claimStatusLoading && (
+        <RewardTooltipItem style={{ color: '#666' }}>{t('tranche.status.loading')}</RewardTooltipItem>
+    );
 
-                {claimStatusLoading ? (
-                    <Typography variant="p" style={{ color: '#666' }}>
-                        {t('tranche.status.loading')}
-                    </Typography>
-                ) : totalAirdropAmount > 0 || totalClaimedAmount > 0 ? (
-                    <>
-                        <RewardTooltipItems>
-                            <Typography variant="p">
-                                {t('tranche.status.total-airdrop')}: {formatAmount(totalAirdropAmount)} XTM
-                            </Typography>
+    const nextItemMarkup = nextAvailable ? (
+        <>
+            <NextRewardWrapper>
+                <RewardTooltipItem>{t('tranche.status.next-reward')}</RewardTooltipItem>
+                <Typography variant="h5">{formatAmount(balanceSummary?.nextAvailableAmount)}</Typography>
+            </NextRewardWrapper>
+            <Countdown futureTime={nextAvailable} compact />
+        </>
+    ) : null;
 
-                            <Typography variant="p">
-                                {t('tranche.status.total-claimed')}: {formatAmount(totalClaimedAmount)} XTM
-                            </Typography>
-
-                            <Typography variant="p">
-                                {t('tranche.status.total-due')}: {formatAmount(totalPendingAmount)} XTM
-                            </Typography>
-                        </RewardTooltipItems>
-
-                        {nextRewardAmount && !isNaN(nextRewardAmount) && (
-                            <>
-                                <NextRewardWrapper>
-                                    <Typography variant="p" style={{ fontWeight: 'bold' }}>
-                                        {t('tranche.status.next-reward')}
-                                    </Typography>
-                                    <Typography variant="h6">{formatAmount(nextRewardAmount)} XTM</Typography>
-                                </NextRewardWrapper>
-                                {countdown && (
-                                    <Typography variant="p">
-                                        {t('tranche.status.available-in')} {formatCountdown(countdown)}
-                                    </Typography>
-                                )}
-                            </>
-                        )}
-                    </>
-                ) : (
-                    <Typography variant="p" style={{ color: '#666' }}>
-                        {t('tranche.status.no-data')}
-                    </Typography>
-                )}
-            </RewardTooltipContent>
-        );
-    }, [
-        killswitchEngaged,
-        t,
-        claimStatusLoading,
-        totalAirdropAmount,
-        totalClaimedAmount,
-        formatAmount,
-        totalPendingAmount,
-        nextRewardAmount,
-        countdown,
-        formatCountdown,
-    ]);
-
-    const handleClick = useCallback(() => {
-        openTrancheModal();
-    }, []);
-
-    const canClaim = !killswitchEngaged && claimEnabled && claimAvailable;
+    const markup = hasClaims && !claimStatusLoading && (
+        <RewardTooltipItems>
+            <RewardTooltipItem>
+                {t('tranche.status.total-airdrop')} <strong>{formatAmount(values.total)}</strong>
+            </RewardTooltipItem>
+            {!nextAvailable && (
+                <RewardTooltipItem>
+                    {t('tranche.status.total-claimed')}: <strong> {formatAmount(values.claimed)} XTM</strong>
+                </RewardTooltipItem>
+            )}
+            {nextItemMarkup}
+        </RewardTooltipItems>
+    );
 
     return (
-        <SidebarItem tooltipContent={tooltipContent} onClick={canClaim ? handleClick : undefined}>
+        <RewardTooltipContent>
+            {ineligibleMarkup}
+            {!isIneligible && <TooltipHeader>{t('loggedInTitle')}</TooltipHeader>}
+            {loadingMarkup}
+            {markup}
+        </RewardTooltipContent>
+    );
+}
+
+export default function Claim() {
+    const features = useAirdropStore((s) => s.features);
+    const claimEnabled = !!features?.includes(FEATURE_FLAGS.FF_AD_CLAIM_ENABLED);
+    const initialFetched = useRef(false);
+    const trancheStatus = useAirdropStore((state) => state.trancheStatus);
+    const { data: claimStatus, isLoading: claimStatusLoading } = useClaimStatus();
+    const { refreshTranches } = useTrancheAutoRefresh({ enabled: claimEnabled });
+
+    const canClaim = claimEnabled && !!claimStatus?.hasClaim && !!trancheStatus?.availableCount;
+    const claimAmount = canClaim && claimStatus?.amount ? `${formatAmountWithKM(claimStatus?.amount)} XTM` : undefined;
+
+    useEffect(() => {
+        if (initialFetched.current) return;
+        if (canClaim) {
+            refreshTranches().then(() => (initialFetched.current = true));
+        }
+    }, [canClaim, refreshTranches]);
+
+    const tooltipContent = (
+        <ClaimTooltip
+            claimStatus={claimStatus}
+            claimStatusLoading={claimStatusLoading}
+            nextAvailable={!canClaim ? trancheStatus?.nextAvailable : undefined}
+        />
+    );
+
+    return (
+        <SidebarItem
+            tooltipContent={tooltipContent}
+            onClick={canClaim ? openTrancheModal : undefined}
+            text={claimAmount}
+        >
             <ActionImgWrapper>
                 <ParachuteSVG />
             </ActionImgWrapper>

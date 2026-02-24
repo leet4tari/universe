@@ -63,6 +63,11 @@ jobs:
           rustup component add rustfmt
           cargo fmt --all -- --check
 
+      - name: Build process-wrapper
+        run: |
+          cargo build --manifest-path process-wrapper/Cargo.toml
+          cargo build --release --manifest-path process-wrapper/Cargo.toml
+
       - name: clippy lint
         working-directory: ./src-tauri
         env:
@@ -90,6 +95,10 @@ jobs:
       - uses: swatinem/rust-cache@v2.7.5
         with:
           workspaces: './src-tauri -> target'
+
+      - name: Build process-wrapper
+        run: |
+          cargo build --manifest-path process-wrapper/Cargo.toml
 
       - name: cargo machete
         working-directory: ./src-tauri
@@ -131,6 +140,10 @@ jobs:
       - uses: swatinem/rust-cache@v2.7.5
         with:
           workspaces: './src-tauri -> target'
+
+      - name: Build process-wrapper
+        run: |
+          cargo build --release --manifest-path process-wrapper/Cargo.toml
 
       - name: cargo tauri build
         working-directory: ./src-tauri
@@ -184,6 +197,10 @@ jobs:
             opencl-headers \
             ocl-icd-opencl-dev
 
+      - name: Build process-wrapper
+        run: |
+          cargo build --release --manifest-path process-wrapper/Cargo.toml
+
       - name: cargo test
         working-directory: ./src-tauri
         env:
@@ -193,3 +210,23 @@ jobs:
           TELEMETRY_API_URL: http://localhost:3004
           EXCHANGE_ID: universal
         run: cargo test --locked --all-features --release
+
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm run test
+
+      - name: Run frontend tests with coverage
+        run: npm run test:coverage

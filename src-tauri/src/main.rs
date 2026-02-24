@@ -30,15 +30,11 @@ use mining_status_manager::MiningStatusManager;
 use node::local_node_adapter::LocalNodeAdapter;
 use node::node_adapter::BaseNodeStatus;
 use node::node_manager::NodeType;
-use process_stats_collector::ProcessStatsCollectorBuilder;
-
 use node::remote_node_adapter::RemoteNodeAdapter;
-
+use process_stats_collector::ProcessStatsCollectorBuilder;
 use setup::setup_manager::SetupManager;
-use std::fs::{remove_dir_all, remove_file};
-use std::path::Path;
+use std::fs::remove_file;
 use tasks_tracker::TasksTrackers;
-use tauri_plugin_cli::CliExt;
 use telemetry_service::TelemetryService;
 use tokio::sync::watch::{self};
 use tor_control_client::TorStatus;
@@ -48,10 +44,10 @@ use websocket_events_manager::WebsocketEventsManager;
 use websocket_manager::{WebsocketManager, WebsocketManagerStatusMessage, WebsocketMessage};
 
 use log4rs::config::RawConfig;
-use std::fs;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tari_common::configuration::Network;
+use tari_transaction_components::consensus::ConsensusManager;
 use tauri::async_runtime::block_on;
 use tauri::{Manager, RunEvent};
 use tauri_plugin_sentry::{minidump, sentry};
@@ -64,8 +60,8 @@ use app_in_memory_config::EXCHANGE_ID;
 use telemetry_manager::TelemetryManager;
 
 use crate::feedback::Feedback;
-use crate::mining::cpu::manager::CpuManager;
 use crate::mining::cpu::CpuMinerStatus;
+use crate::mining::cpu::manager::CpuManager;
 use crate::mining::gpu::consts::GpuMinerStatus;
 use crate::mining::gpu::manager::GpuManager;
 use crate::mm_proxy_manager::MmProxyManager;
@@ -88,12 +84,17 @@ mod consts;
 mod credential_manager;
 mod download_utils;
 mod event_scheduler;
+#[cfg(test)]
+mod event_scheduler_test;
 mod events;
 mod events_emitter;
 mod events_manager;
 mod feedback;
 mod hardware;
 mod internal_wallet;
+#[cfg(test)]
+mod internal_wallet_test;
+mod mcp;
 mod mining;
 mod mining_status_manager;
 mod mm_proxy_adapter;
@@ -108,6 +109,9 @@ mod process_killer;
 mod process_stats_collector;
 mod process_utils;
 mod process_watcher;
+#[cfg(test)]
+mod process_watcher_test;
+mod process_wrapper;
 mod progress_trackers;
 mod release_notes;
 mod requests;
@@ -119,6 +123,8 @@ mod tapplets;
 mod tasks_tracker;
 mod telemetry_manager;
 mod telemetry_service;
+#[cfg(test)]
+mod testing;
 mod tests;
 mod tor_adapter;
 mod tor_control_client;
@@ -155,7 +161,6 @@ const APPLICATION_FOLDER_ID: &str = "com.tari.universe.beta";
 #[derive(Clone)]
 struct UniverseAppState {
     node_status_watch_rx: Arc<watch::Receiver<BaseNodeStatus>>,
-    #[allow(dead_code)]
     wallet_state_watch_rx: Arc<watch::Receiver<Option<WalletState>>>,
     in_memory_config: Arc<RwLock<AppInMemoryConfig>>,
     mm_proxy_manager: MmProxyManager,
@@ -181,7 +186,9 @@ fn main() {
             && std::env::var("WAYLAND_DISPLAY").is_err()
             && std::env::var("XDG_SESSION_TYPE").unwrap_or_default() == "x11"
         {
-            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+            unsafe {
+                std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+            }
         }
     }
     let _unused = fix_path_env::fix();
@@ -206,13 +213,11 @@ fn main() {
             attach_stacktrace: true,
             before_send: Some(Arc::new(|event| {
                 let is_in_ignored = event.logentry.as_ref().is_some_and(|entry| {
-                    IGNORED_SENTRY_ERRORS.iter().any(|ignored| entry.message.starts_with(ignored))
+                    IGNORED_SENTRY_ERRORS
+                        .iter()
+                        .any(|ignored| entry.message.starts_with(ignored))
                 });
-                if is_in_ignored {
-                    None
-                } else {
-                    Some(event)
-                }
+                if is_in_ignored { None } else { Some(event) }
             })),
             ..Default::default()
         },
@@ -226,10 +231,12 @@ fn main() {
     let (base_node_watch_tx, base_node_watch_rx) = watch::channel(BaseNodeStatus::default());
     let (local_node_watch_tx, local_node_watch_rx) = watch::channel(BaseNodeStatus::default());
     let (remote_node_watch_tx, remote_node_watch_rx) = watch::channel(BaseNodeStatus::default());
+    let network = Network::get_current();
+    let consensus_manager = ConsensusManager::builder(network).build();
     let node_manager = NodeManager::new(
         &mut stats_collector,
-        LocalNodeAdapter::new(local_node_watch_tx.clone()),
-        RemoteNodeAdapter::new(remote_node_watch_tx.clone()),
+        LocalNodeAdapter::new(local_node_watch_tx.clone(), consensus_manager.clone()),
+        RemoteNodeAdapter::new(remote_node_watch_tx.clone(), consensus_manager),
         // This value is later overriden when retrieved from config
         NodeType::Local,
         base_node_watch_tx,
@@ -333,6 +340,7 @@ fn main() {
         reason = "This is a temporary fix until the new tauri API is released"
     )]
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_sentry::init_with_no_injection(&client))
@@ -377,11 +385,6 @@ fn main() {
             }
         })
         .setup(|app| {
-            let config_path = app
-                .path()
-                .app_config_dir()
-                .expect("Could not get config dir");
-
             // Remove this after it's been rolled out for a few versions
             let log_path = app.path().app_log_dir().map_err(|e| e.to_string())?;
             let logs_cleared_file = log_path.join("logs_cleared");
@@ -404,104 +407,6 @@ fn main() {
 
             // Do this after logging has started otherwise we can't actually see any errors
             app.manage(app_state_clone);
-            match app.cli().matches() {
-                Ok(matches) => {
-                    if let Some(backup_path) = matches.args.get("import-backup") {
-                        if let Some(backup_path) = backup_path.value.as_str() {
-                            info!(
-                                target: LOG_TARGET_APP_LOGIC,
-                                "Trying to copy backup to existing db: {backup_path:?}"
-                            );
-                            let backup_path = Path::new(backup_path);
-                            if backup_path.exists() {
-                                let existing_db = app
-                                    .path()
-                                    .app_local_data_dir()
-                                    .map_err(Box::new)?
-                                    .join("node")
-                                    .join(
-                                        Network::get_current_or_user_setting_or_default()
-                                            .to_string(),
-                                    )
-                                    .join("data")
-                                    .join("base_node")
-                                    .join("db");
-
-                                info!(target: LOG_TARGET_APP_LOGIC, "Existing db path: {existing_db:?}");
-                                let _unused = fs::remove_dir_all(&existing_db).inspect_err(|e| {
-                                    warn!(
-                                        target: LOG_TARGET_APP_LOGIC,
-                                        "Could not remove existing db when importing backup: {e:?}"
-                                    )
-                                });
-                                let _unused = fs::create_dir_all(&existing_db).inspect_err(|e| {
-                                    error!(
-                                        target: LOG_TARGET_APP_LOGIC,
-                                        "Could not create existing db when importing backup: {e:?}"
-                                    )
-                                });
-                                let _unused = fs::copy(backup_path, existing_db.join("data.mdb"))
-                                    .inspect_err(|e| {
-                                        error!(
-                                            target: LOG_TARGET_APP_LOGIC,
-                                            "Could not copy backup to existing db: {e:?}"
-                                        )
-                                    });
-                            } else {
-                                warn!(
-                                    target: LOG_TARGET_APP_LOGIC,
-                                    "Backup file does not exist: {backup_path:?}"
-                                );
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    error!(target: LOG_TARGET_APP_LOGIC, "Could not get cli matches: {e:?}");
-                    return Err(Box::new(e));
-                }
-            };
-            // The start of needed restart operations. Break this out into a module if we need n+1
-            let tcp_tor_toggled_file = config_path.join("tcp_tor_toggled");
-            if tcp_tor_toggled_file.exists() {
-                let network = Network::default().as_key_str();
-
-                let local_data_dir = app
-                    .path()
-                    .app_local_data_dir()
-                    .expect("Could not get local data dir");
-
-                let node_peer_db = local_data_dir.join("node").join(network).join("peer_db");
-                let wallet_peer_db = local_data_dir.join("wallet").join(network).join("peer_db");
-
-                // They may not exist. This could be first run.
-                if node_peer_db.exists() {
-                    if let Err(e) = remove_dir_all(node_peer_db) {
-                        warn!(
-                            target: LOG_TARGET_APP_LOGIC,
-                            "Could not clear peer data folder: {e}"
-                        );
-                    }
-                }
-
-                if wallet_peer_db.exists() {
-                    if let Err(e) = remove_dir_all(wallet_peer_db) {
-                        warn!(
-                            target: LOG_TARGET_APP_LOGIC,
-                            "Could not clear peer data folder: {e}"
-                        );
-                    }
-                }
-
-                remove_file(tcp_tor_toggled_file).map_err(|e| {
-                    error!(
-                        target: LOG_TARGET_APP_LOGIC,
-                        "Could not remove tcp_tor_toggled file: {e}"
-                    );
-                    e.to_string()
-                })?;
-            }
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -510,6 +415,7 @@ fn main() {
             commands::fetch_tor_bridges,
             commands::get_app_in_memory_config,
             commands::get_applications_versions,
+            commands::get_application_language,
             commands::get_monero_seed_words,
             commands::get_network,
             commands::get_paper_wallet_details,
@@ -552,7 +458,6 @@ fn main() {
             commands::toggle_device_exclusion,
             commands::set_airdrop_tokens,
             commands::get_airdrop_tokens,
-            commands::set_selected_engine,
             commands::frontend_ready,
             commands::start_mining_status,
             commands::stop_mining_status,
@@ -585,7 +490,6 @@ fn main() {
             commands::reset_cpu_pool_config,
             commands::restart_phases,
             commands::list_connected_peers,
-            commands::switch_gpu_miner,
             commands::set_feedback_fields,
             commands::send_otp_request,
             commands::set_mode_mining_time,
@@ -594,11 +498,25 @@ fn main() {
             commands::mark_feedback_survey_as_completed,
             commands::update_shutdown_mode_selection,
             commands::set_pause_on_battery_mode,
+            commands::set_custom_node_directory,
             // Scheduler commands
             commands::add_scheduler_event,
             commands::remove_scheduler_event,
             commands::pause_scheduler_event,
             commands::resume_scheduler_event,
+            // MCP commands
+            mcp::commands::get_mcp_config,
+            mcp::commands::get_mcp_token,
+            mcp::commands::set_mcp_enabled,
+            mcp::commands::refresh_mcp_token_expiry,
+            mcp::commands::revoke_mcp_token,
+            mcp::commands::set_mcp_port,
+            mcp::commands::set_mcp_max_transaction_amount,
+            mcp::commands::set_mcp_tier_enabled,
+            mcp::commands::get_mcp_audit_log,
+            mcp::commands::export_mcp_audit_log,
+            mcp::commands::set_mcp_transactions_enabled,
+            mcp::commands::mcp_transaction_dialog_response,
         ])
         .build(tauri::generate_context!())
         .inspect_err(|e| {
@@ -635,6 +553,11 @@ fn main() {
                 let state = handle_clone.state::<UniverseAppState>();
 
                 block_on(ShutdownManager::instance().initialize_app_handle(handle_clone.clone()));
+
+                if let Err(e) = process_wrapper::initialize_wrapper_path(&handle_clone) {
+                    warn!(target: LOG_TARGET_APP_LOGIC, "Failed to initialize process wrapper sidecar: {}. Processes will spawn without orphan protection.", e);
+                }
+
                 block_on(state.updates_manager.initial_try_update(&handle_clone));
 
                 tauri::async_runtime::spawn(async move {
@@ -649,12 +572,11 @@ fn main() {
                     target: LOG_TARGET_APP_LOGIC,
                     "App shutdown request [ExitRequested] caught with code: {code:#?}"
                 );
-                if let Some(exit_code) = code {
-                    if exit_code == RESTART_EXIT_CODE {
+                if let Some(exit_code) = code
+                    && exit_code == RESTART_EXIT_CODE {
                         // RunEvent does not hold the exit code so we store it separately
                         is_restart_requested.store(true, Ordering::SeqCst);
                     }
-                }
 
                 info!(target: LOG_TARGET_APP_LOGIC, "All processes stopped");
             }

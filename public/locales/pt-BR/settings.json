@@ -50,6 +50,7 @@
   "gpu-miners-not-found": "No GPU Miners found",
   "gpu-mining-enabled": "Mineração de GPU",
   "gpu-mining-not-recommended": "Detected low end hardware, gpu mining is not recommended",
+  "gpu-not-available-on-macos": "⚠️ GPU mining is not available on macOS",
   "gpu-unavailable": "⚠️ GPU desativada porque seu hardware não a suporta",
   "hardware-status": "Status do hardware",
   "idle-timeout": {
@@ -72,6 +73,73 @@
   "local-node-sync-progress": "Progresso de sincronização do nó local",
   "logs": "Logs",
   "low-hash-rate-warning": "Sua taxa de hash é muito baixa. Tente fechar todos os aplicativos, exceto o Tari Universe",
+  "mcp": {
+    "advanced": {
+      "control-tier": "Control Tier",
+      "expiry-days": "Token Expiry (days)",
+      "port": "Server Port",
+      "rate-limit": "Transaction Rate Limit (per minute)",
+      "read-tier": "Read Tier",
+      "title": "Advanced Settings"
+    },
+    "agent-config": {
+      "copied": "Copied!",
+      "copy": "Copy Configuration",
+      "description": "Copy the configuration below to connect an AI agent to Tari Universe",
+      "or-add-to-settings-json": "Or add this to your settings JSON:",
+      "title": "Agent Configuration"
+    },
+    "audit-log": {
+      "description": "Recent MCP tool calls",
+      "duration-ms": "{{ms}}ms",
+      "empty": "No audit entries yet",
+      "export": "Export Log",
+      "title": "Audit Log"
+    },
+    "server-toggle": {
+      "description": "Enable the MCP server to allow AI agents to interact with Tari Universe",
+      "status-running": "Running on port {{port}}",
+      "status-stopped": "Stopped",
+      "title": "MCP Server"
+    },
+    "title": "MCP Server",
+    "token-display": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "created": "Created",
+      "days-remaining": "{{days}} days remaining",
+      "description": "Use this token to authenticate MCP clients",
+      "expires": "Expires",
+      "hide": "Hide",
+      "no-token": "No token generated",
+      "refresh-expiry": "Refresh Expiry",
+      "reveal": "Reveal",
+      "revoke": "Revoke Token",
+      "revoke-confirm": "Are you sure? This will stop the MCP server and require generating a new token.",
+      "title": "Bearer Token"
+    },
+    "transaction-dialog": {
+      "amount": "Amount",
+      "approve": "Approve",
+      "deny": "Deny",
+      "destination": "Destination",
+      "enter-pin": "Enter PIN to approve",
+      "micro-minotari": "({{amount}} µT)",
+      "remaining": "{{countdown}}s remaining",
+      "title": "MCP Transaction Confirmation"
+    },
+    "transactions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "description": "Allow MCP clients to send transactions (requires PIN)",
+      "max-amount": "Max Transaction Amount (µT)",
+      "max-amount-description": "Leave empty for no limit",
+      "pin-required": "PIN must be configured to enable transactions",
+      "title": "Transactions"
+    }
+  },
   "mine-on-app-start": {
     "description": "Quando ativado, o aplicativo iniciará a mineração automaticamente ao ser lançado.",
     "title": "Mineração na inicialização"
@@ -87,6 +155,13 @@
   "network": "Rede",
   "no-entry-guard": "Nenhum Entry Guard conectado!",
   "no-pool-configuration-available": "No pool configuration available",
+  "node": {
+    "confirm-title": "Confirm node data location change",
+    "confirm-warning": "Moving your base node location could result in losing your existing chain data. If this happens you will have to resync.",
+    "data-cta": "Change location",
+    "data-subtitle": "Set a custom location to store the base node data",
+    "data-title": "Node data settings"
+  },
   "node-configuration": "Configuração do nó",
   "node-configuration-description": "Conecte-se com Remoto, Local ou ambos até que seu Local esteja pronto para uso",
   "node-connection-address": "Endereço de conexão",
@@ -163,10 +238,11 @@
   "sync-incomplete": "Syncing...",
   "sync-status": "Sync Status",
   "tabs": {
-    "airdrop": "Airdrop",
+    "airdrop": "Airdrop Claim",
     "connections": "Conexões",
     "experimental": "Experimental",
     "general": "Geral",
+    "mcp": "MCP Server",
     "mining": "Mineração",
     "p2p": "Mineração em Pool",
     "pools": "Pools de Mineração",

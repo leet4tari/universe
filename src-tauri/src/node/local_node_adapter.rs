@@ -20,6 +20,7 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+use crate::LOG_TARGET_APP_LOGIC;
 use crate::ab_test_selector::ABTestSelector;
 use crate::node::node_adapter::{
     BaseNodeStatus, NodeAdapter, NodeAdapterService, NodeStatusMonitor,
@@ -29,21 +30,21 @@ use crate::port_allocator::PortAllocator;
 use crate::process_adapter::{ProcessAdapter, ProcessInstance, ProcessStartupSpec};
 use crate::utils::file_utils::convert_to_string;
 use crate::utils::logging_utils::setup_logging;
-use crate::LOG_TARGET_APP_LOGIC;
+#[cfg(target_os = "windows")]
+use crate::utils::windows_setup_utils::add_firewall_rule;
 use async_trait::async_trait;
 use log::{info, warn};
+
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use tari_common::configuration::Network;
 use tari_crypto::ristretto::RistrettoPublicKey;
 use tari_shutdown::Shutdown;
+use tari_transaction_components::consensus::ConsensusManager;
 use tokio::sync::watch;
-
-#[cfg(target_os = "windows")]
-use crate::utils::windows_setup_utils::add_firewall_rule;
 
 #[derive(Serialize, Deserialize, Default)]
 struct MinotariNodeMigrationInfo {
@@ -81,10 +82,14 @@ pub(crate) struct LocalNodeAdapter {
     required_initial_peers: u32,
     pub(crate) ab_test_group: ABTestSelector,
     pub(crate) http_api_port: u16,
+    consensus_manager: ConsensusManager,
 }
 
 impl LocalNodeAdapter {
-    pub fn new(status_broadcast: watch::Sender<BaseNodeStatus>) -> Self {
+    pub fn new(
+        status_broadcast: watch::Sender<BaseNodeStatus>,
+        consensus_manager: ConsensusManager,
+    ) -> Self {
         let grpc_port = PortAllocator::new().assign_port_with_fallback();
         let tcp_listener_port = PortAllocator::new().assign_port_with_fallback();
         let http_api_port = PortAllocator::new().assign_port_with_fallback();
@@ -99,6 +104,7 @@ impl LocalNodeAdapter {
             tor_control_port: None,
             ab_test_group: ABTestSelector::GroupA,
             http_api_port,
+            consensus_manager,
         }
     }
 
@@ -114,7 +120,9 @@ impl LocalNodeAdapter {
         if let Some(grpc_address) = self.get_grpc_address() {
             Some(NodeAdapterService::new(
                 format!("http://{}:{}", grpc_address.0, grpc_address.1),
+                self.get_http_api_url(),
                 self.required_initial_peers,
+                self.consensus_manager.clone(),
             ))
         } else {
             None
@@ -137,7 +145,9 @@ impl NodeAdapter for LocalNodeAdapter {
         self.get_service()
     }
 
-    async fn get_connection_details(&self) -> Result<(RistrettoPublicKey, String), anyhow::Error> {
+    async fn get_connection_details(
+        &self,
+    ) -> Result<(Option<RistrettoPublicKey>, String), anyhow::Error> {
         let node_service = self.get_service();
         if let Some(node_service) = node_service {
             let node_identity = node_service.get_identity().await?;
@@ -276,17 +286,7 @@ impl ProcessAdapter for LocalNodeAdapter {
             args.push("-p".to_string());
             args.push("base_node.storage.pruning_horizon=100".to_string());
         }
-        // Uncomment to test winning blocks
-        // if cfg!(debug_assertions) {
-        // args.push("--network".to_string());
-        // args.push("localnet".to_string());
-        // }
         if self.use_tor {
-            // args.push("-p".to_string());
-            // args.push(
-            //     "base_node.p2p.transport.tor.listener_address_override=/ip4/127.0.0.1/tcp/18189"
-            //         .to_string(),
-            // );
             args.push("-p".to_string());
             args.push("base_node.p2p.transport.type=tor".to_string());
             if !cfg!(target_os = "macos") {
@@ -383,7 +383,9 @@ impl ProcessAdapter for LocalNodeAdapter {
                 NodeType::Local,
                 NodeAdapterService::new(
                     format!("http://{}:{}", grpc_address.0, grpc_address.1),
+                    self.get_http_api_url(),
                     self.required_initial_peers,
+                    self.consensus_manager.clone(),
                 ),
                 self.status_broadcast.clone(),
                 Arc::new(AtomicU64::new(0)),

@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { offset, safePolygon, useFloating, useHover, useFocus, useInteractions } from '@floating-ui/react';
+import { offset, safePolygon, useFloating, useHover, useFocus, useInteractions, shift } from '@floating-ui/react';
 import { ActionHoveredWrapper, ActionText, ActionWrapper, ContentWrapper, TooltipBox } from './item.style.ts';
 import { AnimatePresence } from 'motion/react';
 
@@ -8,17 +8,18 @@ interface ActionProps {
     hoverContent?: ReactNode;
     tooltipContent?: ReactNode;
     text?: string;
+    isWrapped?: boolean;
     onClick?: () => void;
 }
 
-export function SidebarItem({ children, text, hoverContent, tooltipContent, onClick }: ActionProps) {
+export function SidebarItem({ children, text, hoverContent, tooltipContent, onClick, isWrapped = false }: ActionProps) {
     const [hovered, setHovered] = useState(false);
 
     const { refs, context, floatingStyles } = useFloating({
         open: hovered,
         onOpenChange: setHovered,
         placement: 'right',
-        middleware: [offset(15)],
+        middleware: [offset(15), shift()],
     });
 
     const hover = useHover(context, {
@@ -36,10 +37,10 @@ export function SidebarItem({ children, text, hoverContent, tooltipContent, onCl
             {...getReferenceProps()}
             tabIndex={0}
             onClick={onClick}
-            style={{ cursor: onClick ? 'pointer' : 'default' }}
+            style={{ cursor: onClick || isWrapped ? 'pointer' : 'default' }}
         >
             <ContentWrapper>{hovered && hoverContent ? hoverContent : children}</ContentWrapper>
-            {text ? <ActionText>{text}</ActionText> : null}
+            {text ? <ActionText $isWrapped={isWrapped}>{text}</ActionText> : null}
             <AnimatePresence>
                 {tooltipContent && hovered && (
                     <ActionHoveredWrapper ref={refs.setFloating} {...getFloatingProps()} style={floatingStyles}>

@@ -48,6 +48,7 @@
   "gpu-miners-not-found": "GPU 채굴기를 찾을 수 없습니다",
   "gpu-mining-enabled": "GPU 채굴",
   "gpu-mining-not-recommended": "Detected low end hardware, gpu mining is not recommended",
+  "gpu-not-available-on-macos": "⚠️ GPU mining is not available on macOS",
   "gpu-unavailable": "⚠️ 하드웨어가 지원하지 않아 GPU가 비활성화되었습니다",
   "hardware-status": "하드웨어 상태",
   "idle-timeout": {
@@ -70,6 +71,73 @@
   "local-node-sync-progress": "로컬 노드 동기화 진행",
   "logs": "로그",
   "low-hash-rate-warning": "해시레이트가 매우 낮습니다. Tari Universe 외의 모든 앱을 닫아보세요",
+  "mcp": {
+    "advanced": {
+      "control-tier": "Control Tier",
+      "expiry-days": "Token Expiry (days)",
+      "port": "Server Port",
+      "rate-limit": "Transaction Rate Limit (per minute)",
+      "read-tier": "Read Tier",
+      "title": "Advanced Settings"
+    },
+    "agent-config": {
+      "copied": "Copied!",
+      "copy": "Copy Configuration",
+      "description": "Copy the configuration below to connect an AI agent to Tari Universe",
+      "or-add-to-settings-json": "Or add this to your settings JSON:",
+      "title": "Agent Configuration"
+    },
+    "audit-log": {
+      "description": "Recent MCP tool calls",
+      "duration-ms": "{{ms}}ms",
+      "empty": "No audit entries yet",
+      "export": "Export Log",
+      "title": "Audit Log"
+    },
+    "server-toggle": {
+      "description": "Enable the MCP server to allow AI agents to interact with Tari Universe",
+      "status-running": "Running on port {{port}}",
+      "status-stopped": "Stopped",
+      "title": "MCP Server"
+    },
+    "title": "MCP Server",
+    "token-display": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "created": "Created",
+      "days-remaining": "{{days}} days remaining",
+      "description": "Use this token to authenticate MCP clients",
+      "expires": "Expires",
+      "hide": "Hide",
+      "no-token": "No token generated",
+      "refresh-expiry": "Refresh Expiry",
+      "reveal": "Reveal",
+      "revoke": "Revoke Token",
+      "revoke-confirm": "Are you sure? This will stop the MCP server and require generating a new token.",
+      "title": "Bearer Token"
+    },
+    "transaction-dialog": {
+      "amount": "Amount",
+      "approve": "Approve",
+      "deny": "Deny",
+      "destination": "Destination",
+      "enter-pin": "Enter PIN to approve",
+      "micro-minotari": "({{amount}} µT)",
+      "remaining": "{{countdown}}s remaining",
+      "title": "MCP Transaction Confirmation"
+    },
+    "transactions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "description": "Allow MCP clients to send transactions (requires PIN)",
+      "max-amount": "Max Transaction Amount (µT)",
+      "max-amount-description": "Leave empty for no limit",
+      "pin-required": "PIN must be configured to enable transactions",
+      "title": "Transactions"
+    }
+  },
   "mine-on-app-start": {
     "description": "활성화되면 앱이 시작될 때 자동으로 채굴을 시작합니다.",
     "title": "시작 시 채굴"
@@ -85,6 +153,13 @@
   "network": "네트워크",
   "no-entry-guard": "엔트리 가드가 연결되지 않았습니다!",
   "no-pool-configuration-available": "사용 가능한 풀 구성이 없습니다",
+  "node": {
+    "confirm-title": "Confirm node data location change",
+    "confirm-warning": "Moving your base node location could result in losing your existing chain data. If this happens you will have to resync.",
+    "data-cta": "Change location",
+    "data-subtitle": "Set a custom location to store the base node data",
+    "data-title": "Node data settings"
+  },
   "node-configuration": "노드 구성",
   "node-configuration-description": "로컬이 준비될 때까지 원격, 로컬 또는 둘 다 연결",
   "node-connection-address": "연결 주소",
@@ -156,10 +231,11 @@
   "sync-incomplete": "동기화 중...",
   "sync-status": "동기화 상태",
   "tabs": {
-    "airdrop": "보너스 XTM",
+    "airdrop": "Airdrop Claim",
     "connections": "연결",
     "experimental": "실험적",
     "general": "일반",
+    "mcp": "MCP Server",
     "mining": "채굴",
     "p2p": "풀 채굴",
     "pools": "채굴 풀",

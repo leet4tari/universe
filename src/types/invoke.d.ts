@@ -6,13 +6,13 @@ import {
     TariAddressVariants,
     BaseNodeStatus,
 } from './app-status';
-import { Language } from '@app/i18initializer';
 import { PaperWalletDetails } from './app-status.ts';
 import { displayMode } from '../store/types.ts';
 import { BasePoolData, ConfigBackendInMemory, PauseOnBatteryModeState } from './configs.ts';
 import { ExchangeMiner } from './exchange';
 import { ActiveTapplet } from './tapplets/tapplet.types';
 import { SchedulerEventTiming, SchedulerEventType } from './mining/schedule.ts';
+import { Language } from '../i18initializer.ts';
 
 declare module '@tauri-apps/api/core' {
     function invoke(
@@ -23,8 +23,8 @@ declare module '@tauri-apps/api/core' {
         param: 'set_should_always_use_system_language',
         payload: { shouldAlwaysUseSystemLanguage: boolean }
     ): Promise<void>;
+    function invoke(param: 'get_application_language'): Promise<string>;
     function invoke(param: 'set_should_auto_launch', payload: { shouldAutoLaunch: boolean }): Promise<void>;
-    function invoke(param: 'set_selected_engine', payload: { selectedEngine: string }): Promise<void>;
     function invoke(param: 'set_application_language', payload: { applicationLanguage: Language }): Promise<void>;
     function invoke(param: 'frontend_ready'): Promise<void>;
     function invoke(param: 'download_and_start_installer', payload: { id: string }): Promise<void>;
@@ -133,7 +133,7 @@ declare module '@tauri-apps/api/core' {
     function invoke(param: 'reset_cpu_pool_config', payload: { cpuPoolType: string }): Promise<void>;
     function invoke(param: 'restart_phases', payload: { phases: SetupPhase[] }): Promise<void>;
     function invoke(param: 'list_connected_peers'): Promise<string[]>;
-    function invoke(param: 'switch_gpu_miner', payload: { gpuMinerType: GpuMinerType }): Promise<void>;
+
     function invoke(param: 'set_feedback_fields', payload: { feedbackType: string; wasSent: boolean }): Promise<void>;
     function invoke(param: 'set_mode_mining_time', payload: { mode: string; duration: number }): Promise<void>;
     function invoke(param: 'set_eco_alert_needed'): Promise<void>;
@@ -152,4 +152,5 @@ declare module '@tauri-apps/api/core' {
     function invoke(param: 'remove_scheduler_event', payload: { eventId: string }): Promise<void>;
     function invoke(param: 'pause_scheduler_event', payload: { eventId: string }): Promise<void>;
     function invoke(param: 'resume_scheduler_event', payload: { eventId: string }): Promise<void>;
+    function invoke(param: 'set_custom_node_directory', payload: { path: string }): Promise<void>;
 }

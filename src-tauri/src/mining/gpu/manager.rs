@@ -29,37 +29,36 @@ use tauri_plugin_sentry::sentry;
 use tokio::{
     select,
     sync::{
-        watch::{Receiver, Sender},
         RwLock,
+        watch::{Receiver, Sender},
     },
 };
 
 use crate::{
+    LOG_TARGET_APP_LOGIC, LOG_TARGET_STATUSES, UniverseAppState,
     binaries::Binaries,
     configs::{
-        config_mining::{ConfigMining, ConfigMiningContent},
+        config_mining::ConfigMining,
         config_pools::ConfigPools,
-        pools::{gpu_pools::GpuPool, PoolOrigin},
+        pools::{PoolOrigin, gpu_pools::GpuPool},
         trait_config::ConfigImpl,
     },
     events_emitter::EventsEmitter,
     internal_wallet::InternalWallet,
     mining::{
-        gpu::{
-            consts::{EngineType, GpuMiner, GpuMinerStatus, GpuMinerType, MINERS_PRIORITY},
-            interface::{GpuMinerInterface, GpuMinerInterfaceTrait},
-            miners::{glytex::GlytexGpuMiner, graxil::GraxilGpuMiner, lolminer::LolMinerGpuMiner},
-        },
-        pools::{gpu_pool_manager::GpuPoolManager, PoolManagerInterfaceTrait},
         GpuConnectionType, MinerControlsState,
+        gpu::{
+            consts::{GpuMiner, GpuMinerStatus, GpuMinerType, MINERS_PRIORITY},
+            interface::{GpuMinerInterface, GpuMinerInterfaceTrait},
+            miners::lolminer::LolMinerGpuMiner,
+        },
+        pools::{PoolManagerInterfaceTrait, gpu_pool_manager::GpuPoolManager},
     },
     node::node_adapter::BaseNodeStatus,
     process_adapter::ProcessAdapter,
     process_watcher::{ProcessWatcher, ProcessWatcherStats},
     systemtray_manager::{SystemTrayEvents, SystemTrayManager},
     tasks_tracker::TasksTrackers,
-    utils::math_utils::estimate_earning,
-    UniverseAppState, LOG_TARGET_APP_LOGIC, LOG_TARGET_STATUSES,
 };
 
 static INSTANCE: LazyLock<RwLock<GpuManager>> = LazyLock::new(|| RwLock::new(GpuManager::new()));
@@ -87,8 +86,6 @@ pub struct GpuManager {
     intensity_percentage: Option<u32>,
     #[allow(dead_code)]
     worker_name: Option<String>,
-    #[allow(dead_code)]
-    selected_engine: Option<EngineType>,
 }
 
 impl GpuManager {
@@ -119,7 +116,6 @@ impl GpuManager {
             pool: None,
             intensity_percentage: None,
             worker_name: None,
-            selected_engine: None,
         }
     }
 
@@ -135,42 +131,24 @@ impl GpuManager {
         self.app_handle = Some(app_handle);
     }
 
-    pub fn get_raw_graxil_miner(&self) -> Result<GraxilGpuMiner, anyhow::Error> {
-        if self.available_miners.contains_key(&GpuMinerType::Graxil) {
-            Ok(GraxilGpuMiner::new(
-                self.gpu_internal_status_channel.clone(),
-            ))
-        } else {
-            Err(anyhow::anyhow!("Graxil miner is not available"))
-        }
-    }
-
     pub async fn initialize(
         process_stats_collector: Sender<ProcessWatcherStats>,
         status_channel: Sender<GpuMinerStatus>,
         node_status_channel: Option<Receiver<BaseNodeStatus>>,
     ) {
-        let selected_engine = ConfigMining::content().await.gpu_engine().clone();
         let mut instance = INSTANCE.write().await;
 
         instance.process_stats_collector = process_stats_collector;
         instance.gpu_external_status_channel = status_channel;
         instance.node_status_channel = node_status_channel;
-        instance.selected_engine = Some(selected_engine);
     }
 
-    // Loads the saved miner from config or the first available one
+    // Loads the saved miner - always uses LolMiner since it's the only GPU miner
     pub async fn load_saved_miner(&mut self) -> Result<(), anyhow::Error> {
-        let mut selected_gpu_miner_type = ConfigMining::content().await.gpu_miner_type().clone();
+        let selected_gpu_miner_type = GpuMinerType::LolMiner;
 
         if self.available_miners.contains_key(&selected_gpu_miner_type) {
-            info!(target: LOG_TARGET_APP_LOGIC, "Loaded saved gpu miner: {selected_gpu_miner_type}");
-        } else if !self.available_miners.is_empty() {
-            if let Some(fallback_miner_type) = MINERS_PRIORITY.iter().find(|miner_type| {
-                matches!(self.available_miners.get(miner_type), Some(m) if m.is_healthy)
-            }) {
-                selected_gpu_miner_type = fallback_miner_type.clone();
-            }
+            info!(target: LOG_TARGET_APP_LOGIC, "Loaded gpu miner: {selected_gpu_miner_type}");
         } else {
             return Err(anyhow::anyhow!("No available gpu miners to load"));
         }
@@ -237,7 +215,9 @@ impl GpuManager {
                     })
                     .await?;
             } else {
-                return Err(anyhow::anyhow!("Selected gpu miner does not support pool mining and no other miners are available"));
+                return Err(anyhow::anyhow!(
+                    "Selected gpu miner does not support pool mining and no other miners are available"
+                ));
             }
         }
         Ok(())
@@ -284,7 +264,9 @@ impl GpuManager {
                     })
                     .await?;
             } else {
-                return Err(anyhow::anyhow!("Selected gpu miner does not support solo mining and no other miners are available"));
+                return Err(anyhow::anyhow!(
+                    "Selected gpu miner does not support solo mining and no other miners are available"
+                ));
             }
         }
 
@@ -329,105 +311,102 @@ impl GpuManager {
 
         EventsEmitter::emit_update_gpu_miner_state(MinerControlsState::Initiated).await;
 
-        if let Some(app_handle) = self.app_handle.clone() {
-            let base_path = app_handle
-                .path()
-                .app_local_data_dir()
-                .expect("Could not get data dir");
-            let config_path = app_handle
-                .path()
-                .app_config_dir()
-                .expect("Could not get config dir");
-            let log_path = app_handle
-                .path()
-                .app_log_dir()
-                .expect("Could not get log dir");
+        match self.app_handle.clone() {
+            Some(app_handle) => {
+                let base_path = app_handle
+                    .path()
+                    .app_local_data_dir()
+                    .expect("Could not get data dir");
+                let config_path = app_handle
+                    .path()
+                    .app_config_dir()
+                    .expect("Could not get config dir");
+                let log_path = app_handle
+                    .path()
+                    .app_log_dir()
+                    .expect("Could not get log dir");
 
-            let global_shutdown_signal =
-                TasksTrackers::current().gpu_mining_phase.get_signal().await;
+                let global_shutdown_signal =
+                    TasksTrackers::current().gpu_mining_phase.get_signal().await;
 
-            let task_tracker = TasksTrackers::current()
-                .gpu_mining_phase
-                .get_task_tracker()
-                .await;
+                let task_tracker = TasksTrackers::current()
+                    .gpu_mining_phase
+                    .get_task_tracker()
+                    .await;
 
-            let tari_address = InternalWallet::tari_address().await;
-            let gpu_usage_percentage = ConfigMining::content()
-                .await
-                .get_selected_gpu_usage_percentage();
-            let selected_engine = ConfigMining::content().await.gpu_engine().clone();
+                let tari_address = InternalWallet::tari_address().await;
+                let gpu_usage_percentage = ConfigMining::content()
+                    .await
+                    .get_selected_gpu_usage_percentage();
 
-            if *ConfigPools::content().await.gpu_pool_enabled() {
-                self.handle_pool_connection_load().await?;
-            } else {
-                let app_state = app_handle.state::<UniverseAppState>();
-                let grpc_node_address = app_state.node_manager.get_grpc_address().await?;
-                self.handle_node_connection_load(grpc_node_address).await?;
+                if *ConfigPools::content().await.gpu_pool_enabled() {
+                    self.handle_pool_connection_load().await?;
+                } else {
+                    let app_state = app_handle.state::<UniverseAppState>();
+                    let grpc_node_address = app_state.node_manager.get_grpc_address().await?;
+                    self.handle_node_connection_load(grpc_node_address).await?;
+                }
+
+                let binary = match self.selected_miner {
+                    GpuMinerType::LolMiner => Binaries::LolMiner,
+                };
+
+                // Worker name format depends on the pool
+                // LuckyPool: .Tari-Universe
+                // Kryptex: /Tari-Universe
+                // SupportXTM: Not specified so we use None
+                let worker_name = match ConfigPools::content().await.current_gpu_pool().pool_origin
+                {
+                    PoolOrigin::LuckyPool => Some(".Tari-universe"),
+                    PoolOrigin::SupportXTM => None,
+                    PoolOrigin::Kryptex => Some("/Tari-universe"),
+                };
+
+                let excluded_devices = ConfigMining::content().await.get_excluded_devices();
+
+                self.process_watcher
+                    .adapter
+                    .load_tari_address(&tari_address.to_base58())
+                    .await?;
+                self.process_watcher
+                    .adapter
+                    .load_worker_name(worker_name)
+                    .await?;
+                self.process_watcher
+                    .adapter
+                    .load_intensity_percentage(gpu_usage_percentage)
+                    .await?;
+                self.process_watcher
+                    .adapter
+                    .load_excluded_devices(excluded_devices)
+                    .await?;
+
+                info!(target: LOG_TARGET_APP_LOGIC, "Starting gpu miner process watcher with binary: {:?}", binary);
+
+                self.process_watcher
+                    .start(
+                        base_path,
+                        config_path,
+                        log_path,
+                        binary,
+                        global_shutdown_signal,
+                        task_tracker,
+                    )
+                    .await?;
+
+                info!(target: LOG_TARGET_APP_LOGIC, "Started gpu miner process watcher");
+
+                if self.connection_type.is_pool() {
+                    GpuPoolManager::start_stats_watcher().await;
+                    info!(target: LOG_TARGET_APP_LOGIC, "Started gpu miner pool watcher");
+                }
+                self.status_thread_shutdown = Shutdown::new();
+                self.initialize_status_updates().await;
+                info!(target: LOG_TARGET_APP_LOGIC, "Initialized gpu miner status updates");
             }
-
-            let binary = match self.selected_miner {
-                GpuMinerType::Graxil => Binaries::Graxil,
-                GpuMinerType::LolMiner => Binaries::LolMiner,
-                GpuMinerType::Glytex => Binaries::Glytex,
-            };
-
-            // Worker name format depends on the pool
-            // LuckyPool: .Tari-Universe
-            // Kryptex: /Tari-Universe
-            // SupportXTM: Not specified so we use None
-            let worker_name = match ConfigPools::content().await.current_gpu_pool().pool_origin {
-                PoolOrigin::LuckyPool => Some(".Tari-universe"),
-                PoolOrigin::SupportXTM => None,
-                PoolOrigin::Kryptex => Some("/Tari-universe"),
-            };
-
-            let excluded_devices = ConfigMining::content().await.get_excluded_devices();
-
-            self.process_watcher
-                .adapter
-                .load_tari_address(&tari_address.to_base58())
-                .await?;
-            self.process_watcher
-                .adapter
-                .load_worker_name(worker_name)
-                .await?;
-            self.process_watcher
-                .adapter
-                .load_intensity_percentage(gpu_usage_percentage)
-                .await?;
-            self.process_watcher
-                .adapter
-                .load_gpu_engine(selected_engine)
-                .await?;
-            self.process_watcher
-                .adapter
-                .load_excluded_devices(excluded_devices)
-                .await?;
-
-            info!(target: LOG_TARGET_APP_LOGIC, "Starting gpu miner process watcher with binary: {:?}", binary);
-
-            self.process_watcher
-                .start(
-                    base_path,
-                    config_path,
-                    log_path,
-                    binary,
-                    global_shutdown_signal,
-                    task_tracker,
-                )
-                .await?;
-
-            info!(target: LOG_TARGET_APP_LOGIC, "Started gpu miner process watcher");
-
-            if self.connection_type.is_pool() {
-                GpuPoolManager::start_stats_watcher().await;
-                info!(target: LOG_TARGET_APP_LOGIC, "Started gpu miner pool watcher");
+            _ => {
+                return Err(anyhow::anyhow!("App handle is not set"));
             }
-            self.status_thread_shutdown = Shutdown::new();
-            self.initialize_status_updates().await;
-            info!(target: LOG_TARGET_APP_LOGIC, "Initialized gpu miner status updates");
-        } else {
-            return Err(anyhow::anyhow!("App handle is not set"));
         }
 
         Ok(())
@@ -477,8 +456,6 @@ impl GpuManager {
             self.process_watcher.adapter = adapter;
             info!(target: LOG_TARGET_APP_LOGIC, "Set selected gpu miner interface in process watcher");
             EventsEmitter::emit_update_selected_gpu_miner(miner_cloned.miner_type).await;
-            ConfigMining::update_field(ConfigMiningContent::set_gpu_miner_type, miner_type.clone())
-                .await?;
             GpuPoolManager::handle_miner_switch(new_miner.clone()).await;
         } else {
             return Err(anyhow::anyhow!("Selected gpu miner is not available"));
@@ -604,13 +581,7 @@ impl GpuManager {
 
     fn resolve_miner_interface(&self, miner_type: &GpuMinerType) -> GpuMinerInterface {
         match miner_type {
-            GpuMinerType::Graxil => GpuMinerInterface::Graxil(GraxilGpuMiner::new(
-                self.gpu_internal_status_channel.clone(),
-            )),
             GpuMinerType::LolMiner => GpuMinerInterface::LolMiner(LolMinerGpuMiner::new(
-                self.gpu_internal_status_channel.clone(),
-            )),
-            GpuMinerType::Glytex => GpuMinerInterface::Glytex(GlytexGpuMiner::new(
                 self.gpu_internal_status_channel.clone(),
             )),
         }
@@ -619,7 +590,6 @@ impl GpuManager {
     pub async fn initialize_status_updates(&mut self) {
         let mut gpu_internal_status_reciever = self.gpu_internal_status_channel.subscribe();
         let gpu_external_status_channel = self.gpu_external_status_channel.clone();
-        let node_status_channel = self.node_status_channel.clone();
         let connection_type = self.connection_type.clone();
         let mut last_known_status = self.gpu_internal_status_channel.borrow().clone();
 
@@ -650,7 +620,7 @@ impl GpuManager {
                         if updated_status.is_ok() {
                             let status = gpu_internal_status_reciever.borrow().clone();
                             let paresd_status = match connection_type {
-                                GpuConnectionType::Node { .. } => Self::handle_node_connection_type_status_change(status.clone(), node_status_channel.clone()).await,
+                                GpuConnectionType::Node { .. } => status.clone(),
                                 GpuConnectionType::Pool { .. } => Self::handle_pool_connection_type_status_change(status.clone()).await,
                             };
                             let _res = gpu_external_status_channel.send(paresd_status.clone());
@@ -666,27 +636,6 @@ impl GpuManager {
                 }
             }
         });
-    }
-
-    async fn handle_node_connection_type_status_change(
-        gpu_status: GpuMinerStatus,
-        node_status_reciever: Option<Receiver<BaseNodeStatus>>,
-    ) -> GpuMinerStatus {
-        if let Some(node_status_reciever) = node_status_reciever {
-            let node_status = node_status_reciever.borrow();
-            let estimated_earnings = estimate_earning(
-                node_status.sha_network_hashrate,
-                gpu_status.hash_rate,
-                node_status.block_reward,
-            );
-
-            GpuMinerStatus {
-                estimated_earnings,
-                ..gpu_status
-            }
-        } else {
-            gpu_status
-        }
     }
 
     async fn handle_pool_connection_type_status_change(
@@ -709,11 +658,6 @@ impl GpuManager {
                 error!(target: LOG_TARGET_APP_LOGIC, "GpuManager::on_app_exit failed: {}", e);
             }
         }
-    }
-
-    #[allow(dead_code)]
-    pub async fn handle_engine_change(_new_engine: EngineType) -> Result<(), anyhow::Error> {
-        todo!()
     }
 
     #[allow(dead_code)]

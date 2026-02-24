@@ -126,8 +126,8 @@ interface Hashrate {
     unit: string;
 }
 
-export function formatHashrate(hashrate: number, joinUnit = true, algo = GpuMiningAlgorithm.SHA3X): Hashrate {
-    const unit = algo === GpuMiningAlgorithm.SHA3X ? 'H' : 'G';
+export function formatHashrate(hashrate: number, joinUnit = true, _algo = GpuMiningAlgorithm.C29): Hashrate {
+    const unit = 'G';
     const fixed = (val: number, dec = 2) => Number(val.toFixed(val >= 100 ? 1 : dec));
     if (hashrate < 1000) {
         return {
@@ -185,5 +185,28 @@ export const formatCountdown = (targetDate: string): string => {
 export const fmtTimeUnit = (n: number): string => String(n).padStart(2, '0');
 export const fmtTimePartString = (t: TimeParts): string =>
     `${fmtTimeUnit(t.hour)}:${fmtTimeUnit(t.minute)} ${t.timePeriod}`;
+
+/**
+ * Format amount with max 3 characters, no decimals if no space available
+ */
+export function formatAmountWithKM(value: number): string {
+    if (value === 0) return '0';
+
+    if (value < 1000) {
+        if (value >= 100) return Math.round(value).toString(); // 3 digits, no decimals
+        if (value >= 10) return value.toFixed(1); // 2 digits + 1 decimal = 3 chars
+        return value.toFixed(2); // 1 digit + 2 decimals = 3 chars (0.XX)
+    } else if (value < 1000000) {
+        const kValue = value / 1000;
+        if (kValue >= 100) return `${Math.round(kValue)}k`; // e.g., "123k" = 4 chars, but this is the minimum for 100k+
+        if (kValue >= 10) return `${Math.round(kValue)}k`; // e.g., "12k" = 3 chars
+        return `${kValue.toFixed(1)}k`; // e.g., "1.2k" = 4 chars, but this gives better precision
+    } else {
+        const mValue = value / 1000000;
+        if (mValue >= 100) return `${Math.round(mValue)}m`;
+        if (mValue >= 10) return `${Math.round(mValue)}m`;
+        return `${mValue.toFixed(1)}m`;
+    }
+}
 
 export { formatDecimalCompact, roundToTwoDecimals, removeDecimals, removeXTMCryptoDecimals, formatValue };

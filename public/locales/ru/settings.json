@@ -48,6 +48,7 @@
   "gpu-miners-not-found": "Майнеры на GPU не найдены",
   "gpu-mining-enabled": "Майнинг на GPU",
   "gpu-mining-not-recommended": "Detected low end hardware, gpu mining is not recommended",
+  "gpu-not-available-on-macos": "⚠️ GPU mining is not available on macOS",
   "gpu-unavailable": "⚠️ GPU отключен, так как ваше оборудование не поддерживает его",
   "hardware-status": "Состояние оборудования",
   "idle-timeout": {
@@ -70,6 +71,73 @@
   "local-node-sync-progress": "Прогресс синхронизации локального узла",
   "logs": "Логи",
   "low-hash-rate-warning": "Ваш хешрейт очень низкий. Попробуйте закрыть все приложения, кроме Tari Universe",
+  "mcp": {
+    "advanced": {
+      "control-tier": "Control Tier",
+      "expiry-days": "Token Expiry (days)",
+      "port": "Server Port",
+      "rate-limit": "Transaction Rate Limit (per minute)",
+      "read-tier": "Read Tier",
+      "title": "Advanced Settings"
+    },
+    "agent-config": {
+      "copied": "Copied!",
+      "copy": "Copy Configuration",
+      "description": "Copy the configuration below to connect an AI agent to Tari Universe",
+      "or-add-to-settings-json": "Or add this to your settings JSON:",
+      "title": "Agent Configuration"
+    },
+    "audit-log": {
+      "description": "Recent MCP tool calls",
+      "duration-ms": "{{ms}}ms",
+      "empty": "No audit entries yet",
+      "export": "Export Log",
+      "title": "Audit Log"
+    },
+    "server-toggle": {
+      "description": "Enable the MCP server to allow AI agents to interact with Tari Universe",
+      "status-running": "Running on port {{port}}",
+      "status-stopped": "Stopped",
+      "title": "MCP Server"
+    },
+    "title": "MCP Server",
+    "token-display": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "created": "Created",
+      "days-remaining": "{{days}} days remaining",
+      "description": "Use this token to authenticate MCP clients",
+      "expires": "Expires",
+      "hide": "Hide",
+      "no-token": "No token generated",
+      "refresh-expiry": "Refresh Expiry",
+      "reveal": "Reveal",
+      "revoke": "Revoke Token",
+      "revoke-confirm": "Are you sure? This will stop the MCP server and require generating a new token.",
+      "title": "Bearer Token"
+    },
+    "transaction-dialog": {
+      "amount": "Amount",
+      "approve": "Approve",
+      "deny": "Deny",
+      "destination": "Destination",
+      "enter-pin": "Enter PIN to approve",
+      "micro-minotari": "({{amount}} µT)",
+      "remaining": "{{countdown}}s remaining",
+      "title": "MCP Transaction Confirmation"
+    },
+    "transactions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "description": "Allow MCP clients to send transactions (requires PIN)",
+      "max-amount": "Max Transaction Amount (µT)",
+      "max-amount-description": "Leave empty for no limit",
+      "pin-required": "PIN must be configured to enable transactions",
+      "title": "Transactions"
+    }
+  },
   "mine-on-app-start": {
     "description": "При запуске приложения майнинг будет начинаться автоматически.",
     "title": "Майнинг при запуске"
@@ -85,6 +153,13 @@
   "network": "Сеть",
   "no-entry-guard": "Нет подключения к Entry Guard!",
   "no-pool-configuration-available": "Конфигурация пула недоступна",
+  "node": {
+    "confirm-title": "Confirm node data location change",
+    "confirm-warning": "Moving your base node location could result in losing your existing chain data. If this happens you will have to resync.",
+    "data-cta": "Change location",
+    "data-subtitle": "Set a custom location to store the base node data",
+    "data-title": "Node data settings"
+  },
   "node-configuration": "Конфигурация узлов",
   "node-configuration-description": "Подключитесь к удаленной, локальной или обеим нодам пока Ваша локальная не будет готова",
   "node-connection-address": "Адрес подключения",
@@ -156,10 +231,11 @@
   "sync-incomplete": "Синхронизация...",
   "sync-status": "Статус синхронизации",
   "tabs": {
-    "airdrop": "Бонус XTM",
+    "airdrop": "Airdrop Claim",
     "connections": "Подключения",
     "experimental": "Экспериментальные",
     "general": "Общие",
+    "mcp": "MCP Server",
     "mining": "Майнинг",
     "p2p": "Майнинг в пуле",
     "pools": "Майнинговые пулы",

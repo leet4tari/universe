@@ -20,10 +20,10 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+use crate::LOG_TARGET_APP_LOGIC;
 use crate::wallet::spend_wallet::SpendWallet;
 use crate::wallet::wallet_adapter::WalletAdapter;
 use crate::wallet::wallet_status_monitor::WalletStatusMonitorError;
-use crate::LOG_TARGET_APP_LOGIC;
 use minotari_node_grpc_client::grpc::payment_recipient::PaymentType;
 use minotari_node_grpc_client::grpc::wallet_client::WalletClient;
 use minotari_node_grpc_client::grpc::{
@@ -145,7 +145,10 @@ impl<'a> TransactionService<'a> {
             .await
             .map_err(|_e| WalletStatusMonitorError::WalletNotStarted)?;
         let res = client
-            .cancel_transaction(CancelTransactionRequest { tx_id: tx_id_u64 })
+            .cancel_transaction(CancelTransactionRequest {
+                tx_id: tx_id_u64,
+                force_if_completed: false,
+            })
             .await?;
 
         let cancel_tx_res = res.into_inner();

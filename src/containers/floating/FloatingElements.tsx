@@ -4,7 +4,6 @@ import AdminUI from '../../components/AdminUI/AdminUI.tsx';
 import ToastStack from '../../components/ToastStack/ToastStack.tsx';
 import XCLinkModal from '../../components/exchanges/LinkModal/LinkModal.tsx';
 import { CustomPowerLevelsDialogContainer } from '../navigation/components/Miner/components/CustomPowerLevels/CustomPowerLevelsDialogContainer.tsx';
-import CrewRewards from '../main/CrewRewards/CrewRewards.tsx';
 
 import AutoUpdateDialog from './AutoUpdateDialog/AutoUpdateDialog.tsx';
 import BatteryAlertDialog from './BatteryAlertDialog/index.ts';
@@ -31,6 +30,7 @@ import ShareRewardModal from './ShareRewardModal/ShareRewardModal';
 import UniversalEXSelectorModal from './UniversalEXSelectorModal/UniversalEXSelectorModal.tsx';
 import XSpaceEventBanner from './XSpaceBanner/XSpaceBanner.tsx';
 import AirdropClaimModal from '../main/Airdrop/AirdropClaim/AirdropClaimModal.tsx';
+import McpTransactionDialog from './mcp/McpTransactionDialog.tsx';
 import SchedulerModal from './scheduler/SchedulerModal.tsx';
 
 const environment = import.meta.env.MODE;
@@ -62,8 +62,8 @@ const FloatingElements = () => {
             <SeedPhrase />
             <CreatePinDialog />
             <EnterPinDialog />
-            <CrewRewards />
             <SettingsModal />
+            <McpTransactionDialog />
             <AirdropClaimModal />
             <FailedModuleInitializationDialog />
             <ExitFeedbackSurveyDialog />

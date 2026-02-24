@@ -22,7 +22,6 @@ import {
     handleCpuMinerControlsStateChanged,
     handleGpuMinerControlsStateChanged,
     handleSelectedMinerChanged,
-    setAvailableEngines,
     setShowEcoAlert,
 } from '@app/store/actions/miningStoreActions';
 import {
@@ -53,6 +52,7 @@ import {
 import { setBackgroundNodeState, setNodeStoreState, setTorEntryGuards } from '@app/store/useNodeStore';
 import {
     handleExchangeIdChanged,
+    handleConfigMcpLoaded,
     handleConfigMiningLoaded,
     handleConfigUILoaded,
     handleConfigWalletLoaded,
@@ -60,6 +60,12 @@ import {
     handleConfigPoolsLoaded,
     handleGpuDevicesSettingsUpdated,
 } from '@app/store/actions/appConfigStoreActions';
+import {
+    setMcpServerStatus,
+    addMcpAuditEntry,
+    setMcpPendingTransaction,
+    handleMcpTransactionResult,
+} from '@app/store/useMcpStore';
 import { invoke } from '@tauri-apps/api/core';
 
 import { setCpuPoolStats, setGpuPoolStats } from '@app/store/actions/miningPoolsStoreActions';
@@ -147,6 +153,21 @@ const useTauriEventsListener = () => {
                             console.info('ConfigPoolsLoaded', event.payload);
                             handleConfigPoolsLoaded(event.payload);
                             break;
+                        case 'ConfigMcpLoaded':
+                            handleConfigMcpLoaded(event.payload);
+                            break;
+                        case 'McpServerStatusUpdate':
+                            setMcpServerStatus(event.payload.running, event.payload.port ?? null);
+                            break;
+                        case 'McpTransactionConfirmation':
+                            setMcpPendingTransaction(event.payload);
+                            break;
+                        case 'McpTransactionResult':
+                            handleMcpTransactionResult(event.payload);
+                            break;
+                        case 'McpAuditEntry':
+                            addMcpAuditEntry(event.payload);
+                            break;
                         case 'CloseSplashscreen':
                             //TODO find better place for this
                             await handleAppLoaded();
@@ -161,9 +182,6 @@ const useTauriEventsListener = () => {
                             break;
                         case 'AvailableMiners':
                             handleAvailableMinersChanged(event.payload);
-                            break;
-                        case 'DetectedAvailableGpuEngines':
-                            setAvailableEngines(event.payload.engines, event.payload.selected_engine);
                             break;
                         case 'CriticalProblem': {
                             const isMacAppFolderError =

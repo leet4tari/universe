@@ -21,7 +21,7 @@ use crate::LOG_TARGET_APP_LOGIC;
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 use crate::progress_trackers::progress_stepper::IncrementalProgressTracker;
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use async_trait::async_trait;
 use log::debug;
 use std::collections::HashMap;
@@ -29,12 +29,12 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 use tokio::sync::Mutex as AsyncMutex;
 
+use super::Binaries;
 use super::adapter_bridge::BridgeTappletAdapter;
 use super::adapter_github::GithubReleasesAdapter;
 use super::adapter_tor::TorReleaseAdapter;
 use super::adapter_xmrig::XmrigVersionApiAdapter;
 use super::binaries_manager::BinaryManager;
-use super::Binaries;
 
 static INSTANCE: LazyLock<BinaryResolver> = LazyLock::new(BinaryResolver::new);
 
@@ -128,30 +128,6 @@ impl BinaryResolver {
             ),
         );
 
-        binary_manager.insert(
-            Binaries::Glytex,
-            BinaryManager::new(
-                Binaries::Glytex.name().to_string(),
-                None,
-                Box::new(GithubReleasesAdapter {
-                    repo: "glytex".to_string(),
-                    owner: "tari-project".to_string(),
-                }),
-                true,
-            ),
-        );
-        binary_manager.insert(
-            Binaries::Graxil,
-            BinaryManager::new(
-                Binaries::Graxil.name().to_string(),
-                None,
-                Box::new(GithubReleasesAdapter {
-                    repo: "graxil".to_string(),
-                    owner: "tari-project".to_string(),
-                }),
-                false,
-            ),
-        );
         binary_manager.insert(
             Binaries::LolMiner,
             BinaryManager::new(

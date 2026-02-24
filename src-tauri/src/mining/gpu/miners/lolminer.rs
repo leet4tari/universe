@@ -35,6 +35,7 @@ use tokio::sync::watch::Sender;
 use crate::utils::windows_setup_utils::add_firewall_rule;
 
 use crate::{
+    APPLICATION_FOLDER_ID, LOG_TARGET_APP_LOGIC, LOG_TARGET_STATUSES,
     binaries::{Binaries, BinaryResolver},
     configs::{
         config_mining::{ConfigMining, ConfigMiningContent},
@@ -42,13 +43,13 @@ use crate::{
     },
     events_emitter::EventsEmitter,
     mining::{
+        GpuConnectionType,
         gpu::{
             consts::{GpuMinerStatus, GpuMinerType},
             interface::{GpuMinerInterfaceTrait, GpuMinerStatusInterface},
             manager::GpuManager,
             miners::GpuCommonInformation,
         },
-        GpuConnectionType,
     },
     port_allocator::PortAllocator,
     process_adapter::{
@@ -56,7 +57,6 @@ use crate::{
         StatusMonitor,
     },
     process_utils::launch_child_process,
-    APPLICATION_FOLDER_ID, LOG_TARGET_APP_LOGIC, LOG_TARGET_STATUSES,
 };
 
 #[derive(Default)]
@@ -67,6 +67,7 @@ pub struct LolMinerGpuMiner {
     pub connection_type: Option<GpuConnectionType>,
     pub gpu_status_sender: Sender<GpuMinerStatus>,
     pub gpu_devices: Vec<GpuCommonInformation>,
+    pub excluded_devices: Vec<u32>,
 }
 
 impl LolMinerGpuMiner {
@@ -78,6 +79,7 @@ impl LolMinerGpuMiner {
             connection_type: None,
             gpu_status_sender,
             gpu_devices: vec![],
+            excluded_devices: vec![],
         }
     }
 }
@@ -103,6 +105,14 @@ impl GpuMinerInterfaceTrait for LolMinerGpuMiner {
         connection_type: GpuConnectionType,
     ) -> Result<(), anyhow::Error> {
         self.connection_type = Some(connection_type);
+        Ok(())
+    }
+
+    async fn load_excluded_devices(
+        &mut self,
+        excluded_devices: Vec<u32>,
+    ) -> Result<(), anyhow::Error> {
+        self.excluded_devices = excluded_devices;
         Ok(())
     }
 
@@ -222,6 +232,32 @@ impl ProcessAdapter for LolMinerGpuMiner {
         args.push("--logfile".to_string());
         let log_file_path = log_folder.join("lolminer.txt");
         args.push(log_file_path.to_string_lossy().to_string());
+
+        // Add device selection if there are excluded devices
+        if !self.excluded_devices.is_empty() && !self.gpu_devices.is_empty() {
+            let devices_to_use: Vec<String> = self
+                .gpu_devices
+                .iter()
+                .map(|d| d.device_id)
+                .filter(|id| !self.excluded_devices.contains(id))
+                .map(|id| id.to_string())
+                .collect();
+
+            if devices_to_use.is_empty() {
+                return Err(anyhow::anyhow!(
+                    "All GPU devices are excluded. Cannot start lolminer."
+                ));
+            } else {
+                args.push("--devices".to_string());
+                args.push(devices_to_use.join(","));
+                info!(
+                    target: LOG_TARGET_APP_LOGIC,
+                    "Lolminer using devices: {} (excluded: {:?})",
+                    devices_to_use.join(","),
+                    self.excluded_devices
+                );
+            }
+        }
 
         #[cfg(target_os = "windows")]
         add_firewall_rule("lolMiner.exe".to_string(), binary_version_path.clone())?;

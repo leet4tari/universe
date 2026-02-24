@@ -19,28 +19,28 @@
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 use tari_common::configuration::Network;
 use tari_shutdown::Shutdown;
 use tauri_plugin_sentry::sentry;
-use tokio::sync::watch::{channel, Sender};
+use tokio::sync::watch::{Sender, channel};
 
 use crate::{
+    LOG_TARGET_APP_LOGIC,
     download_utils::validate_checksum,
     progress_trackers::progress_stepper::IncrementalProgressTracker,
     requests::clients::http_file_client::HttpFileClient,
     tasks_tracker::TasksTrackers,
     utils::platform_utils::{CurrentOperatingSystem, PlatformUtils},
-    LOG_TARGET_APP_LOGIC,
 };
 
 use super::{
+    Binaries,
     binaries_list::BinaryPlatformAssets,
     binaries_resolver::{BinaryDownloadInfo, LatestVersionApiAdapter},
-    Binaries,
 };
 
 #[derive(Deserialize, Serialize, Default)]
@@ -137,7 +137,7 @@ impl BinaryManager {
             fallback_url = fallback_url.replace("/v", "/");
         }
 
-        let mut network = match Network::get_current_or_user_setting_or_default() {
+        let network = match Network::get_current_or_user_setting_or_default() {
             Network::NextNet => "nextnet",
             Network::Esmeralda => "esme",
             Network::StageNet => "nextnet",
@@ -145,10 +145,6 @@ impl BinaryManager {
             Network::LocalNet => "testnet",
             Network::Igor => "testnet",
         };
-
-        if binary.eq(&Binaries::Glytex) && network.eq("esme") {
-            network = "testnet";
-        }
 
         let platform = match PlatformUtils::detect_current_os() {
             CurrentOperatingSystem::Windows => BinaryPlatformAssets::WindowsX64,
@@ -280,14 +276,12 @@ impl BinaryManager {
         if let Some(step_update_channel) = progress_channel {
             let (sender, mut receiver) = channel::<f64>(0.0);
             let task_tacker = match Binaries::from_name(&self.binary_name) {
-                Binaries::Glytex => &TasksTrackers::current().gpu_mining_phase,
                 Binaries::Xmrig => &TasksTrackers::current().cpu_mining_phase,
                 Binaries::Wallet => &TasksTrackers::current().wallet_phase,
                 Binaries::MinotariNode => &TasksTrackers::current().node_phase,
                 Binaries::Tor => &TasksTrackers::current().node_phase,
                 Binaries::MergeMiningProxy => &TasksTrackers::current().cpu_mining_phase,
                 Binaries::BridgeTapplet => &TasksTrackers::current().wallet_phase,
-                Binaries::Graxil => &TasksTrackers::current().gpu_mining_phase,
                 Binaries::LolMiner => &TasksTrackers::current().gpu_mining_phase,
             };
             let binary_name = self.binary_name.clone();

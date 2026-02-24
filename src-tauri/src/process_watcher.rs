@@ -27,12 +27,14 @@ use crate::{LOG_TARGET_APP_LOGIC, LOG_TARGET_STATUSES};
 use futures_util::future::FusedFuture;
 use log::{error, info, warn};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 use tari_shutdown::{Shutdown, ShutdownSignal};
 use tokio::task::JoinHandle;
 
+use crate::configs::config_core::ConfigCore;
+use crate::configs::trait_config::ConfigImpl;
 use tokio::select;
 use tokio::sync::watch;
 use tokio::time::sleep;
@@ -122,13 +124,24 @@ impl<TAdapter: ProcessAdapter> ProcessWatcher<TAdapter> {
         let poll_time = self.poll_time;
         let health_timeout = self.health_timeout;
 
+        let mut data_dir_path = base_path.clone();
+        if self.adapter.name() == "local_minotari_node"
+            && let Some(custom_path) = ConfigCore::content().await.node_data_directory().clone()
+        {
+            data_dir_path = custom_path;
+        }
+
         info!(target: LOG_TARGET_APP_LOGIC, "Using {binary_path:?} for {name}");
         let first_start = self
             .is_first_start
             .load(std::sync::atomic::Ordering::SeqCst);
-        let (mut child, status_monitor) =
-            self.adapter
-                .spawn(base_path, config_path, log_path, binary_path, first_start)?;
+        let (mut child, status_monitor) = self.adapter.spawn(
+            data_dir_path,
+            config_path,
+            log_path,
+            binary_path,
+            first_start,
+        )?;
         if first_start {
             self.is_first_start
                 .store(false, std::sync::atomic::Ordering::SeqCst);
@@ -214,12 +227,12 @@ impl<TAdapter: ProcessAdapter> ProcessWatcher<TAdapter> {
     }
 
     pub async fn wait_ready(&self) -> Result<(), anyhow::Error> {
-        if let Some(ref task) = self.watcher_task {
-            if task.is_finished() {
-                //let exit_code = task.await??;
+        if let Some(ref task) = self.watcher_task
+            && task.is_finished()
+        {
+            //let exit_code = task.await??;
 
-                return Err(anyhow::anyhow!("Process watcher task has already finished"));
-            }
+            return Err(anyhow::anyhow!("Process watcher task has already finished"));
         }
         Ok(())
     }
@@ -237,7 +250,10 @@ impl<TAdapter: ProcessAdapter> ProcessWatcher<TAdapter> {
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn do_health_check<TStatusMonitor: StatusMonitor, TProcessInstance: ProcessInstanceTrait>(
+pub(crate) async fn do_health_check<
+    TStatusMonitor: StatusMonitor,
+    TProcessInstance: ProcessInstanceTrait,
+>(
     child: &mut TProcessInstance,
     status_monitor3: TStatusMonitor,
     name: String,
@@ -274,12 +290,17 @@ async fn do_health_check<TStatusMonitor: StatusMonitor, TProcessInstance: Proces
                 is_healthy = true;
             }
             HealthStatus::Initializing => {
+                // TODO(testing): If process stays in Initializing forever, no restart occurs.
+                // Consider adding max initialization timeout. See TESTING_ISSUES.md.
                 *warning_count = 0;
                 is_healthy = false;
             }
             HealthStatus::Warning => {
                 stats.num_warnings += 1;
                 *warning_count += 1;
+                // TODO(testing): When warning_count > 10, is_healthy stays false (triggers restart).
+                // Next 10 warnings are then "healthy" again, creating restart cycles.
+                // Clarify if this is intended behavior. See TESTING_ISSUES.md.
                 if *warning_count > 10 {
                     error!(target: LOG_TARGET_STATUSES, "{name} is not healthy. Health check returned warning");
                     *warning_count = 0;
@@ -355,7 +376,7 @@ async fn do_health_check<TStatusMonitor: StatusMonitor, TProcessInstance: Proces
 
             // We are adding unhealthy_timer.elapsed() to the duration since last healthy status instead of health_timer.elapsed()
             // because we get there by watcher tick and we want to measure the time since the last healthy status
-            // for GraxilMiner for example time between this line execution is around 10 seconds
+            // Time between line executions may be around 10 seconds
             // health_timer.elapsed() is resolves to around 1 second
             // unhealthy_timer.elapsed() resolves to around 10 seconds
             *duration_since_last_healthy_status += unhealthy_timer.elapsed();

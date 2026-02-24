@@ -22,10 +22,9 @@ export interface MiningStoreState {
     isCpuMiningInitiated: boolean;
     isGpuMiningInitiated: boolean;
     wasMineOnAppStartExecuted?: boolean;
+    resumeAfterRestart: { cpu: boolean; gpu: boolean };
     customLevelsDialogOpen: boolean;
     network?: Network;
-    engine?: string;
-    availableEngines: string[];
     availableMiners?: Record<GpuMinerType, GpuMiner>;
     selectedMiner?: GpuMinerType;
     sessionMiningTime: SessionMiningTime;
@@ -43,11 +42,10 @@ const initialState: MiningStoreState = {
     isCpuMiningInitiated: false,
     isGpuMiningInitiated: false,
     wasMineOnAppStartExecuted: false,
+    resumeAfterRestart: { cpu: false, gpu: false },
     isChangingMode: false,
     isExcludingGpuDevices: false,
     miningControlsEnabled: true,
-    availableEngines: [],
-    engine: undefined,
     network: undefined,
     availableMiners: undefined,
     selectedMiner: undefined,

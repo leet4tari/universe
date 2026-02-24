@@ -23,8 +23,8 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use log::{error, info, warn};
@@ -32,8 +32,8 @@ use serde::{Deserialize, Serialize};
 use tari_common::configuration::Network;
 use tari_crypto::ristretto::RistrettoPublicKey;
 use tari_shutdown::ShutdownSignal;
-use tokio::sync::watch::{self, Sender};
 use tokio::sync::RwLock;
+use tokio::sync::watch::{self, Sender};
 use tokio::time::sleep;
 use tokio::{fs, select};
 use tokio_util::task::TaskTracker;
@@ -50,7 +50,7 @@ use crate::process_watcher::ProcessWatcherStats;
 use crate::progress_trackers::progress_stepper::IncrementalProgressTracker;
 use crate::setup::setup_manager::SetupManager;
 use crate::tasks_tracker::TasksTrackers;
-use crate::{BaseNodeStatus, LocalNodeAdapter, RemoteNodeAdapter, LOG_TARGET_APP_LOGIC};
+use crate::{BaseNodeStatus, LOG_TARGET_APP_LOGIC, LocalNodeAdapter, RemoteNodeAdapter};
 
 #[derive(Debug, thiserror::Error)]
 pub enum NodeManagerError {
@@ -290,11 +290,13 @@ impl NodeManager {
         let shutdown_signal = TasksTrackers::current().node_phase.get_signal().await;
         loop {
             let current_service = self.get_current_service().await?;
+            let remote = self.is_remote().await;
             match current_service
                 .wait_synced(
                     progress_params_tx,
                     progress_percentage_tx,
                     shutdown_signal.clone(),
+                    remote,
                 )
                 .await
             {
@@ -331,8 +333,8 @@ impl NodeManager {
                                     }
                                     _ = tokio::time::sleep(Duration::from_millis(2000)) => {
                                         // Try to get node status
-                                        if let Ok(ref current_service) = current_service {
-                                            if let Ok(status) = current_service.get_network_state().await {
+                                        if let Ok(ref current_service) = current_service
+                                            && let Ok(status) = current_service.get_network_state(false).await {
                                                 match status.readiness_status {
                                                     ReadinessStatus::Migration(progress) => {
                                                         info!(target: LOG_TARGET_APP_LOGIC, "Database migration in progress: {:.1}% ({}/{})",
@@ -362,7 +364,6 @@ impl NodeManager {
                                                     }
                                                 }
                                             }
-                                        }
                                     }
                                 }
                             }
@@ -409,13 +410,21 @@ impl NodeManager {
     }
 
     pub async fn get_identity(&self) -> Result<NodeIdentity, anyhow::Error> {
-        let current_service = self.get_current_service().await?;
-        current_service.get_identity().await
+        if self.is_local().await {
+            let current_service = self.get_current_service().await?;
+            current_service.get_identity().await
+        } else {
+            let (_, address) = self.get_connection_details().await?;
+            Ok(NodeIdentity {
+                public_key: None,
+                public_addresses: vec![address],
+            })
+        }
     }
 
     pub async fn get_connection_details(
         &self,
-    ) -> Result<(RistrettoPublicKey, String), anyhow::Error> {
+    ) -> Result<(Option<RistrettoPublicKey>, String), anyhow::Error> {
         let current_adapter = self.current_adapter.read().await;
         current_adapter.get_connection_details().await
     }
@@ -510,8 +519,12 @@ impl NodeManager {
     }
 
     pub async fn list_connected_peers(&self) -> Result<Vec<String>, anyhow::Error> {
-        let current_service = self.get_current_service().await?;
-        current_service.list_connected_peers().await
+        if self.is_local().await {
+            let current_service = self.get_current_service().await?;
+            current_service.list_connected_peers().await
+        } else {
+            Ok(Vec::new())
+        }
     }
 
     // Self Checks
@@ -764,7 +777,7 @@ async fn monitor_local_node_sync_and_switch(
                     local_node_watcher.as_ref().and_then(|watcher| watcher.adapter.get_service())
                 } {
                     match local_node_service
-                        .wait_synced(&progress_params_tx, &progress_percentage_tx, shutdown_signal.clone())
+                        .wait_synced(&progress_params_tx, &progress_percentage_tx, shutdown_signal.clone(), false)
                         .await
                     {
                         Ok(synced_height) => {
@@ -813,10 +826,10 @@ async fn switch_to_local(node_manager: NodeManager, node_type: Arc<RwLock<NodeTy
             .handle_switch_to_local_node()
             .await;
         let mut remote_node_watcher = node_manager.remote_node_watcher.write().await;
-        if let Some(remote_node_watcher) = remote_node_watcher.as_mut() {
-            if let Err(e) = remote_node_watcher.stop().await {
-                error!(target: LOG_TARGET_APP_LOGIC, "Failed to stop remote node watcher: {e}");
-            }
+        if let Some(remote_node_watcher) = remote_node_watcher.as_mut()
+            && let Err(e) = remote_node_watcher.stop().await
+        {
+            error!(target: LOG_TARGET_APP_LOGIC, "Failed to stop remote node watcher: {e}");
         }
     }
 }
